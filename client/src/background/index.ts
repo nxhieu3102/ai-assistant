@@ -1,29 +1,28 @@
-async function callApi() {
+async function callApi(content: string) {
   try {
-      const response = await fetch('http://localhost:3000/translate', {
-          method: 'GET', 
-          headers: {
-              'Content-Type': 'application/json',
-          }
-      });
-      if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data
+      const params = {
+          action: 'translate',
+          text: content,
+          language: 'Vietnamese',
+          needExplanation: "false",
+          context: 'no specific context',
+      };
+
+      const response = await fetch('http://localhost:3000/translate?' + new URLSearchParams(params).toString());
+      return response.json();
   } catch (error) {
       console.error('Error calling API:', error);
   }
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  callApi();
+  callApi("");
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log(request);
     if (request.action === 'translate') {
-      callApi().then((result) => {
+      callApi(request.content).then((result) => {
           sendResponse(result);
       }).catch(error => {
           sendResponse({ status: 'API call failed', error: error.message });

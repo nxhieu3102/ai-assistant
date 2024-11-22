@@ -15,10 +15,14 @@ class TranslateService {
         `Let's translate these words into ${payload.language} with context related to ${payload.context}: "${payload.text}"` +
         (payload.needExplanation
           ? '. Please include your explanation.'
-          : '. Just return the translation, not include your explanation.')
+          : '. Just return the translation, not include any explanation.')
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
+          {
+            role: 'system',
+            content: 'Translate the text into the target language.',
+          },
           {
             role: 'user',
             content,

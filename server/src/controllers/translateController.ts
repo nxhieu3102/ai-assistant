@@ -5,6 +5,7 @@ import TranslateService from 'src/services/translateService'
 class TranslateController {
   public translate = async (req: Request, res: Response) => {
     try {
+      console.log("req.query:", req.query);
       const payload: PayloadRequest = {
         language: req.query.language as string,
         text: req.query.text as string,
@@ -13,6 +14,7 @@ class TranslateController {
       }
       const translateService = new TranslateService()
       const result = await translateService.translate(payload)
+      console.log("result:", result);
       res.send(result)
     } catch (error) {
       console.error('Error calling Gemini Google API:', error)

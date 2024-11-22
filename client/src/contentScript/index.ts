@@ -1,4 +1,57 @@
-let lastSelection = '';
+const style = document.createElement('style')
+style.innerHTML = `
+  .popup {
+    width: 250px;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    font-size: 14px;
+    color: #333;
+    position: absolute;
+    z-index: 1001;
+  }
+
+  .popup select {
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  .translation {
+    margin-bottom: 10px;
+  }
+
+  .translation span {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .footer {
+    text-align: right;
+    font-size: 12px;
+    color: #555;
+  }
+
+  .footer a {
+    color: #007acc;
+    text-decoration: none;
+  }
+
+  .footer a:hover {
+    text-decoration: underline;
+  }
+`
+
+document.head.appendChild(style)
+
+let lastSelection: {
+  text: string
+  ranges: Range[]
+  anchorNode?: Node | null
+  focusNode?: Node | null
+} | null = null
 
 type Message = {
   action: string
@@ -7,30 +60,57 @@ type Message = {
 
 const sendMessage = (message: Message) => {
   chrome.runtime.sendMessage(message, function (response) {
-    console.log('Background response:', response)
-    if (response && response.content) {
-      const messageBox = document.createElement('div')
-      messageBox.style.position = 'fixed'
-      messageBox.style.bottom = '20px'
-      messageBox.style.right = '20px'
-      messageBox.style.padding = '10px'
-      messageBox.style.backgroundColor = 'white'
-      messageBox.style.border = '1px solid black'
-      messageBox.style.zIndex = '1001'
-      messageBox.innerText = response.content
-      document.body.appendChild(messageBox)
-      setTimeout(() => {
-        document.body.removeChild(messageBox)
-      }, 5000)
+    if (response && response.content && lastSelection) {
+      let popup = document.getElementById('translation-popup')
+      if (!popup) {
+        popup = document.createElement('div')
+        popup.id = 'translation-popup'
+        popup.className = 'popup'
+      }
+
+      popup.style.display = 'block'
+      popup.innerHTML = `
+        <select style="border-radius: 8px;">
+          <option>English</option>
+          <option>Vietnamese</option>
+        </select>
+        <div class="translation">
+          
+          <span>
+            <span>${message.content}</span>
+          </span>
+
+          <span>
+              <h3 style="margin-bottom: 8px;">Vietnamese</h3>
+              <span>${response.content}</span>
+          </span>          
+        </div>
+        <div class="footer">
+          <a href="#">Extension Options</a>
+        </div>
+      `
+
+      const range = lastSelection.ranges[lastSelection.ranges.length - 1]
+      const rect = range.getBoundingClientRect()
+      popup.style.top = `${rect.bottom + window.scrollY + 5}px`
+      popup.style.left = `${rect.left + window.scrollX}px`
+
+      if (!document.getElementById('translation-popup')) {
+        document.body.appendChild(popup)
+      }
     }
   })
 }
-
 const handleClick = () => {
-  if (lastSelection.length > 0) {
-    sendMessage({ 
+  console.log("clicked");
+  const selectionIcon = document.getElementById('selection-icon')
+  if (selectionIcon) {
+    selectionIcon.style.display = 'none'
+  }
+  if (lastSelection && lastSelection.toString().length > 0) {
+    sendMessage({
       action: 'translate',
-      content: lastSelection.toString()
+      content: lastSelection.text,
     })
   }
 }
@@ -39,8 +119,8 @@ const createIcon = () => {
   const icon = document.createElement('div')
   icon.id = 'selection-icon'
   icon.style.position = 'absolute'
-  icon.style.width = '48px'
-  icon.style.height = '48px'
+  icon.style.width = '24px'
+  icon.style.height = '24px'
   const ImageUrl = chrome.runtime.getURL('img/icon.png')
   icon.style.background = `url(${ImageUrl})`
   icon.style.backgroundSize = 'contain'
@@ -51,15 +131,49 @@ const createIcon = () => {
 
 document.addEventListener('selectionchange', () => {
   const selection = document.getSelection()
+  if (
+    selection &&
+    (selection.anchorNode === document.getElementById('selection-icon') ||
+      selection.focusNode === document.getElementById('selection-icon') ||
+      selection.anchorNode === document.getElementById('translation-popup') ||
+      selection.focusNode === document.getElementById('translation-popup') ||
+      selection.anchorNode?.parentElement?.closest('#translation-popup') ||
+      selection.focusNode?.parentElement?.closest('#translation-popup'))
+  ) {
+    return
+  }
+
+  let icon = document.getElementById('selection-icon')
+  if (icon) {
+    icon.style.display = 'none'
+  }
+
+  let popup = document.getElementById('translation-popup')
+  if (popup) {
+    popup.style.display = 'none'
+  }
   if (selection && selection.toString().length > 0) {
-    lastSelection = selection.toString();
-    let icon = document.getElementById('selection-icon')
-    if (!icon) {
-      icon = createIcon()
+    lastSelection = {
+      text: selection.toString(),
+      ranges: Array.from({ length: selection.rangeCount }, (_, i) =>
+        selection.getRangeAt(i).cloneRange(),
+      ),
+      anchorNode: selection.anchorNode,
+      focusNode: selection.focusNode,
     }
-    const range = selection.getRangeAt(0)
+  }
+})
+
+document.addEventListener('mouseup', () => {
+  let icon = document.getElementById('selection-icon')
+  if (!icon) {
+    icon = createIcon()
+  }
+  console.log(lastSelection);
+  if (lastSelection) {
+    const range = lastSelection.ranges[lastSelection.ranges.length - 1]
     const rect = range.getBoundingClientRect()
-    icon.style.top = `${rect.top + window.scrollY - 30}px`
+    icon.style.top = `${rect.bottom + window.scrollY + 5}px`
     icon.style.left = `${rect.left + window.scrollX}px`
     icon.style.display = 'block'
     icon.style.zIndex = '1000'
