@@ -1,7 +1,7 @@
 const style = document.createElement('style')
 style.innerHTML = `
   .popup {
-    width: 250px;
+    width: 450px;
     background: #fff;
     border-radius: 6px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
@@ -70,7 +70,7 @@ const sendMessage = (message: Message) => {
 
       popup.style.display = 'block'
       popup.innerHTML = `
-        <select style="border-radius: 8px;">
+        <select style="border-radius: 8px; color:white; background-color: #2a2a2a;">
           <option>English</option>
           <option>Vietnamese</option>
         </select>
@@ -81,7 +81,7 @@ const sendMessage = (message: Message) => {
           </span>
 
           <span>
-              <h3 style="margin-bottom: 8px;">Vietnamese</h3>
+              <h3 style="margin-bottom: 8px; color:rgb(38 38 38/var(--tw-text-opacity)); font-weight:bold">Vietnamese</h3>
               <span>${response.content}</span>
           </span>          
         </div>
@@ -164,17 +164,18 @@ document.addEventListener('selectionchange', () => {
   }
 })
 
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', (event) => {
   let icon = document.getElementById('selection-icon')
   if (!icon) {
     icon = createIcon()
   }
-  console.log(lastSelection);
-  if (lastSelection) {
-    const range = lastSelection.ranges[lastSelection.ranges.length - 1]
-    const rect = range.getBoundingClientRect()
-    icon.style.top = `${rect.bottom + window.scrollY + 5}px`
-    icon.style.left = `${rect.left + window.scrollX}px`
+  const selection = document.getSelection();
+  if (selection) {
+    console.log(selection.toString());
+  }
+  if (selection && selection.toString().length > 0) {
+    icon.style.top = `${event.clientY + window.scrollY + 5}px`
+    icon.style.left = `${event.clientX + window.scrollX}px`
     icon.style.display = 'block'
     icon.style.zIndex = '1000'
     icon.style.pointerEvents = 'auto'
