@@ -33,3 +33,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true
   }
 })
+
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    await chrome.storage.local.clear()
+  } catch (error) {
+    console.error('Error removing storage key:', error)
+  }
+})

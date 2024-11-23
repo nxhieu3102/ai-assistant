@@ -3,11 +3,14 @@ import { Spin, Input } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 
 export const Popup = () => {
+  const [isTranslating, setIsTranslating] = useState(false)
+  const [inputText, setInputText] = useState('')
   const [selectedText, setSelectedText] = useState('')
   const [translation, setTranslation] = useState('')
   const popupRef = useRef(null)
 
   const fetchTranslation = async (text: string) => {
+    setIsTranslating(true)
     const params = {
       action: 'translate',
       text,
@@ -18,15 +21,14 @@ export const Popup = () => {
     const response = await fetch(
       'http://localhost:3000/translate?' + new URLSearchParams(params).toString(),
     )
-
-    console.log(response)
     const data = await response.json()
+    setIsTranslating(false)
     return data.content
   }
 
   const handleClick = async () => {
-    if (selectedText) {
-      const translatedText = await fetchTranslation(selectedText)
+    if (inputText.length > 0) {
+      const translatedText = await fetchTranslation(inputText)
       setTranslation(translatedText)
     }
   }
@@ -49,6 +51,9 @@ export const Popup = () => {
     })
   }, [])
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value)
+  }
   return (
     <div
       ref={popupRef}
@@ -77,7 +82,7 @@ export const Popup = () => {
         <option>Vietnamese</option>
       </select>
       <div className="translation">
-        <span>{selectedText.length > 0 ? selectedText : <Input onChange={}/>}</span>
+        <span>{selectedText.length > 0 ? selectedText : <Input onChange={handleInputChange}/>}</span>
         <span>
           <h3
             style={{
@@ -89,7 +94,7 @@ export const Popup = () => {
             Vietnamese
           </h3>
           <span>
-            {selectedText.length > 0 && translation.length == 0 ? (
+            {isTranslating ? (
               <Spin indicator={<LoadingOutlined spin />} />
             ) : (
               translation
@@ -123,11 +128,11 @@ export const Popup = () => {
       >
         ✕
       </button>
-      {translation.length == 0 && (
+      
         <button onClick={handleClick} style={{ marginTop: '10px' }}>
           Translate
         </button>
-      )}
+      
     </div>
   )
 }
