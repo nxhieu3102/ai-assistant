@@ -1,7 +1,7 @@
 const style = document.createElement('style')
 style.innerHTML = `
   .popup {
-    width: 450px;
+    width: 400px;
     background: #fff;
     border-radius: 6px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
@@ -58,6 +58,14 @@ type Message = {
   content: any
 }
 
+const updateSelections = (selection: string) => {
+  chrome.storage.local.get('selections', (result) => {
+    const selections = result.selections || []
+    selections.push(selection)
+    chrome.storage.local.set({ selections })
+  })
+}
+
 const sendMessage = (message: Message) => {
   chrome.runtime.sendMessage(message, function (response) {
     if (response && response.content && lastSelection) {
@@ -102,7 +110,6 @@ const sendMessage = (message: Message) => {
   })
 }
 const handleClick = () => {
-  console.log("clicked");
   const selectionIcon = document.getElementById('selection-icon')
   if (selectionIcon) {
     selectionIcon.style.display = 'none'
@@ -131,6 +138,9 @@ const createIcon = () => {
 
 document.addEventListener('selectionchange', () => {
   const selection = document.getSelection()
+  if(selection) {
+    updateSelections(selection.toString())
+  }
   if (
     selection &&
     (selection.anchorNode === document.getElementById('selection-icon') ||
@@ -170,9 +180,6 @@ document.addEventListener('mouseup', (event) => {
     icon = createIcon()
   }
   const selection = document.getSelection();
-  if (selection) {
-    console.log(selection.toString());
-  }
   if (selection && selection.toString().length > 0) {
     icon.style.top = `${event.clientY + window.scrollY + 5}px`
     icon.style.left = `${event.clientX + window.scrollX}px`

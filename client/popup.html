@@ -1,13 +1,60 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="/icon/logo.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chrome Extension + React + TS + Vite</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/popup/index.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/icon/logo.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chrome Extension + React + TS + Vite</title>
+  <style>
+    .popup {
+      width: 400px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      font-size: 14px;
+      color: #333;
+      position: absolute;
+      z-index: 1001;
+    }
+
+    .popup select {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .translation {
+      margin-bottom: 10px;
+    }
+
+    .translation span {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .footer {
+      text-align: right;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .footer a {
+      color: #007acc;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/popup/index.tsx"></script>
+</body>
+
 </html>
