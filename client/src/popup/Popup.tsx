@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from 'react'
-import { Spin, Input } from 'antd'
+import { Spin, Input, Button } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 
 export const Popup = () => {
-  const [isTranslating, setIsTranslating] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
   const [inputText, setInputText] = useState('')
   const [selectedText, setSelectedText] = useState('')
-  const [translation, setTranslation] = useState('')
+  const [action, setAction] = useState('')
+  const [result, setResult] = useState('')
   const popupRef = useRef(null)
 
   const fetchTranslation = async (text: string) => {
-    setIsTranslating(true)
+    setIsProcessing(true)
     const params = {
-      action: 'translate',
       text,
       language: 'Vietnamese',
       needExplanation: 'false',
@@ -22,20 +22,46 @@ export const Popup = () => {
       'http://localhost:3000/translate?' + new URLSearchParams(params).toString(),
     )
     const data = await response.json()
-    setIsTranslating(false)
+    setIsProcessing(false)
     return data.content
   }
 
-  const handleClick = async () => {
+  const fetchSummarize = async (text: string) => {
+    setIsProcessing(true)
+    const params = {
+      text,
+      context: 'no specific context',
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/summarize?' + new URLSearchParams(params).toString(),
+    )
+    const data = await response.json()
+    setIsProcessing(false)
+    return data.content
+  }
+
+  const handleClickTranslate = async () => {
     if (inputText.length > 0) {
+      setAction('translate')
       const translatedText = await fetchTranslation(inputText)
-      setTranslation(translatedText)
+      setResult(translatedText)
+      setAction('')
+    }
+  }
+
+  const handleClickSummarize = async () => {
+    if (inputText.length > 0) {
+      setAction('summarize')
+      const summarizedText = await fetchSummarize(inputText)
+      setResult(summarizedText)
+      setAction('')
     }
   }
 
   const handleClosePopup = () => {
     setSelectedText('')
-    setTranslation('')
+    setResult('')
   }
 
   useEffect(() => {
@@ -45,7 +71,7 @@ export const Popup = () => {
       if (validSelection) {
         setSelectedText(validSelection)
         const translatedText = await fetchTranslation(validSelection)
-        setTranslation(translatedText)
+        setResult(translatedText)
       }
       chrome.storage.local.set({ selections: [] })
     })
@@ -82,38 +108,36 @@ export const Popup = () => {
         <option>Vietnamese</option>
       </select>
       <div className="translation">
-        <span>{selectedText.length > 0 ? selectedText : <Input onChange={handleInputChange}/>}</span>
         <span>
-          <h3
-            style={{
-              marginBottom: '8px',
-              color: 'rgb(38, 38, 38)',
-              fontWeight: 'bold',
-            }}
-          >
-            Vietnamese
-          </h3>
-          <span>
-            {isTranslating ? (
-              <Spin indicator={<LoadingOutlined spin />} />
+          {selectedText.length > 0 ? selectedText : <Input onChange={handleInputChange} />}
+        </span>
+        <span>
+          {result.length > 0 &&
+            (action === 'translate' ? (
+              <h3
+                style={{
+                  marginBottom: '8px',
+                  color: 'rgb(38, 38, 38)',
+                  fontWeight: 'bold',
+                }}
+              >
+                Vietnamese
+              </h3>
             ) : (
-              translation
-            )}
-          </span>
+              <h3
+                style={{
+                  marginBottom: '8px',
+                  color: 'rgb(38, 38, 38)',
+                  fontWeight: 'bold',
+                }}
+              >
+                Summary
+              </h3>
+            ))}
+          <span>{isProcessing ? <Spin indicator={<LoadingOutlined spin />} /> : result}</span>
         </span>
       </div>
-      <div className="footer" style={{ textAlign: 'right', fontSize: '12px', color: '#555' }}>
-        <a
-          href="#"
-          style={{
-            color: '#007acc',
-            textDecoration: 'none',
-          }}
-          onClick={(e) => e.preventDefault()}
-        >
-          Extension Options
-        </a>
-      </div>
+
       <button
         style={{
           position: 'absolute',
@@ -128,11 +152,26 @@ export const Popup = () => {
       >
         ✕
       </button>
-      
-        <button onClick={handleClick} style={{ marginTop: '10px' }}>
+
+      <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-start' }}>
+        <Button onClick={handleClickTranslate} style={{ marginRight: '10px' }}>
           Translate
-        </button>
-      
+        </Button>
+        <Button onClick={handleClickSummarize}>Summarize</Button>
+      </div>
+
+      <div className="footer" style={{ textAlign: 'right', fontSize: '12px', color: '#555' }}>
+        <a
+          href="#"
+          style={{
+            color: '#007acc',
+            textDecoration: 'none',
+          }}
+          onClick={(e) => e.preventDefault()}
+        >
+          Extension Options
+        </a>
+      </div>
     </div>
   )
 }
