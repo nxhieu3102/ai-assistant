@@ -3,6 +3,6 @@ import TranslateController from 'src/controllers/translateController'
 
 const router = Router()
 const translateController = new TranslateController()
-router.get('/translate', translateController.translate)
+router.get('/', translateController.translate)
 
 export default router

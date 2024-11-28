@@ -1,9 +1,9 @@
 import { Request, Response } from 'express'
 import { PayloadRequest } from 'src/models/translateModel'
-import TranslateService from 'src/services/translateService'
+import SummarizeService from 'src/services/summarizeService'
 
-class TranslateController {
-  public translate = async (req: Request, res: Response) => {
+class SummarizeController {
+  public summarize = async (req: Request, res: Response) => {
     try {
       const payload: PayloadRequest = {
         language: req.query.language as string,
@@ -11,9 +11,9 @@ class TranslateController {
         needExplanation: req.query.needExplanation === 'true',
         context: req.query.context as string,
       }
-      console.log(payload);
-      const translateService = new TranslateService()
-      const result = await translateService.translate(payload)
+      console.log("payload:", payload);
+      const service = new SummarizeService()
+      const result = await service.summarize(payload)
       console.log("result:", result);
       res.send(result)
     } catch (error) {
@@ -23,4 +23,4 @@ class TranslateController {
   }
 }
 
-export default TranslateController
+export default SummarizeController

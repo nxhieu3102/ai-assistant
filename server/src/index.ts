@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv'
 // import passport from 'passport'
 // import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
 import translateRoutes from './routes/translateRoutes'
+import summarizeRoutes from './routes/summarizeRoutes'
 dotenv.config()
 
 const app = express()
@@ -38,7 +39,8 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
   // res.redirect('/')
 // })
 
-app.use('/', translateRoutes)
+app.use('/translate', translateRoutes)
+app.use('/summarize', summarizeRoutes)
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}/`)
