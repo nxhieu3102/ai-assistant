@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install -g nodemon typescript
+RUN npm install -g nodemon typescript tsx
 RUN npm install
 
 COPY . .
