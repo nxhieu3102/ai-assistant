@@ -6,6 +6,8 @@ RUN rm -rf node_modules
 
 COPY . .
 
+RUN npm install -g nodemon
+RUN npm install -g typescript
 RUN npm install
 
 RUN npm run build
