@@ -4,8 +4,8 @@ import { LoadingOutlined } from '@ant-design/icons'
 
 export const Popup = () => {
   const [isProcessing, setIsProcessing] = useState(false)
-  const [inputText, setInputText] = useState('')
   const [selectedText, setSelectedText] = useState('')
+  const [inputText, setInputText] = useState('')
   const [action, setAction] = useState('')
   const [result, setResult] = useState('')
   const popupRef = useRef(null)
@@ -32,7 +32,6 @@ export const Popup = () => {
       text,
       context: 'no specific context',
     }
-
     const response = await fetch(
       'http://localhost:3000/summarize?' + new URLSearchParams(params).toString(),
     )
@@ -42,20 +41,18 @@ export const Popup = () => {
   }
 
   const handleClickTranslate = async () => {
-    if (inputText.length > 0) {
-      setAction('translate')
-      const translatedText = await fetchTranslation(inputText)
+    if (selectedText.length > 0) {
+      const translatedText = await fetchTranslation(selectedText)
       setResult(translatedText)
-      setAction('')
+      setAction('translate')
     }
   }
 
   const handleClickSummarize = async () => {
-    if (inputText.length > 0) {
-      setAction('summarize')
-      const summarizedText = await fetchSummarize(inputText)
+    if (selectedText.length > 0) {
+      const summarizedText = await fetchSummarize(selectedText)
       setResult(summarizedText)
-      setAction('')
+      setAction('summarize')
     }
   }
 
@@ -67,18 +64,16 @@ export const Popup = () => {
   useEffect(() => {
     chrome.storage.local.get('selections', async (result) => {
       const selections = result.selections || []
-      const validSelection = selections.findLast((s: string) => s.length > 0)
-      if (validSelection) {
+      const validSelection = selections.pop();
+      if (validSelection && validSelection.length > 0) {
         setSelectedText(validSelection)
-        const translatedText = await fetchTranslation(validSelection)
-        setResult(translatedText)
       }
       chrome.storage.local.set({ selections: [] })
     })
   }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputText(e.target.value)
+    setSelectedText(e.target.value)
   }
   return (
     <div
