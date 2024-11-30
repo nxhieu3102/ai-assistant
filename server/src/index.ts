@@ -1,14 +1,19 @@
 import express from 'express'
 import * as dotenv from 'dotenv'
+import bodyParser from 'body-parser'
+
 // import session from 'express-session'
 // import passport from 'passport'
 // import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
 import translateRoutes from './routes/translateRoutes'
 import summarizeRoutes from './routes/summarizeRoutes'
+import saveRoutes from './routes/saveRoutes'
 dotenv.config()
 
 const app = express()
 const port = process.env.PORT || 3000
+
+app.use(bodyParser.json())
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
@@ -41,7 +46,7 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
 
 app.use('/translate', translateRoutes)
 app.use('/summarize', summarizeRoutes)
-
+app.use('/save', saveRoutes)
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}/`)
 })

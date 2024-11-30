@@ -1,4 +1,4 @@
-async function callApi(content: string) {
+async function translate(content: string) {
   try {
     const params = {
       action: 'translate',
@@ -17,19 +17,52 @@ async function callApi(content: string) {
   }
 }
 
+async function save(content: string, translation: string) {
+  try {
+    const params = {
+      initialText: content,
+      translation: translation,
+    }
+
+    const response = await fetch(
+      'http://localhost:3000/save',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+      },
+    )
+    return response.json()
+  } catch (error) {
+    console.error('Error calling API:', error)
+  }
+}
+
+
 chrome.runtime.onInstalled.addListener(() => {
-  callApi('')
+  translate('')
 })
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'translate') {
-    callApi(request.content)
+    translate(request.content)
       .then((result) => {
         sendResponse(result)
       })
       .catch((error) => {
         sendResponse({ status: 'API call failed', error: error.message })
       })
+    return true
+  }
+  if (request.action === 'save') {
+    try {
+      save(request.content, request.translation)
+      sendResponse({ status: 'saved' })
+    } catch (error) {
+      sendResponse({ status: 'failed', error: 's' })
+    }
     return true
   }
 })

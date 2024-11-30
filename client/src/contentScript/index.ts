@@ -83,20 +83,39 @@ const sendMessage = (message: Message) => {
           <option>Vietnamese</option>
         </select>
         <div class="translation">
-          
           <span>
-            <span>${message.content}</span>
+        <span>${message.content}</span>
           </span>
-
           <span>
-              <h3 style="margin-bottom: 8px; color:rgb(38 38 38/var(--tw-text-opacity)); font-weight:bold">Vietnamese</h3>
-              <span>${response.content}</span>
+          <h3 style="margin-bottom: 8px; color:rgb(38 38 38/var(--tw-text-opacity)); font-weight:bold">Vietnamese</h3>
+          <span>${response.content}</span>
           </span>          
         </div>
         <div class="footer">
+          <button id="save-button" style="margin-right: 10px;">Save</button>
           <a href="#">Extension Options</a>
         </div>
       `
+
+      const saveButton = popup.querySelector('#save-button')
+      if (saveButton) {
+        saveButton.addEventListener('click', () => {
+          if (lastSelection) {
+            chrome.runtime.sendMessage(
+              {
+                action: 'save',
+                content: lastSelection.text,
+                translation: response.content,
+              },
+              function (response) {
+                if (response && response.status === 'saved') {
+                  saveButton.textContent = 'Saved!'
+                }
+              },
+            )
+          }
+        })
+      }
 
       const range = lastSelection.ranges[lastSelection.ranges.length - 1]
       const rect = range.getBoundingClientRect()
@@ -138,7 +157,7 @@ const createIcon = () => {
 
 document.addEventListener('selectionchange', () => {
   const selection = document.getSelection()
-  if(selection) {
+  if (selection) {
     updateSelections(selection.toString())
   }
   if (
@@ -179,7 +198,7 @@ document.addEventListener('mouseup', (event) => {
   if (!icon) {
     icon = createIcon()
   }
-  const selection = document.getSelection();
+  const selection = document.getSelection()
   if (selection && selection.toString().length > 0) {
     icon.style.top = `${event.clientY + window.scrollY + 5}px`
     icon.style.left = `${event.clientX + window.scrollX}px`

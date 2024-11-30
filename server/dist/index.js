@@ -1,49 +1,41 @@
 import express from 'express';
 import * as dotenv from 'dotenv';
-import OpenAI from 'openai';
+import bodyParser from 'body-parser';
+// import session from 'express-session'
+// import passport from 'passport'
+// import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
+import translateRoutes from './routes/translateRoutes';
+import summarizeRoutes from './routes/summarizeRoutes';
+import saveRoutes from './routes/saveRoutes';
 dotenv.config();
-const API_KEY = process.env.OPENAI_API_KEY;
-const openai = new OpenAI({
-    apiKey: API_KEY,
-});
 const app = express();
-const port = 3000;
-app.get('/translate', (req, res) => {
-    try {
-        const payload = {
-            language: req.query.language,
-            text: req.query.text,
-            needExplanation: req.query.needExplanation === 'true',
-            context: req.query.context,
-        };
-        return complete(payload).then((result) => {
-            res.send(result);
-        });
-    }
-    catch (error) {
-        console.error('Error calling Gemini Google API:', error);
-        res.status(200).send('Error calling Gemini Google API');
-    }
-});
+const port = process.env.PORT || 3000;
+app.use(bodyParser.json());
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+// app.use(session({ secret: 'your-secret-key', resave: false, saveUninitialized: true }))
+// app.use(passport.initialize())
+// app.use(passport.session())
+// passport.use(new GoogleStrategy({
+//   clientID: GOOGLE_CLIENT_ID,
+//   clientSecret: GOOGLE_CLIENT_SECRET,
+//   callbackURL: '/auth/google/callback'
+// }, (accessToken, refreshToken, profile, done) => {
+//   return done(null, profile)
+// }))
+// passport.serializeUser((user, done) => {
+//   done(null, user)
+// })
+// passport.deserializeUser((user, done) => {
+//   done(null, user)
+// })
+// app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
+// app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
+// res.redirect('/')
+// })
+app.use('/translate', translateRoutes);
+app.use('/summarize', summarizeRoutes);
+app.use('/save', saveRoutes);
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}/`);
 });
-async function complete(payload) {
-    try {
-        const content = `Let's translate these words into ${payload.language} with context related to ${payload.context}: "${payload.text}"` + (payload.needExplanation ? '. Please include your explanation.' : '. Just return the translation, not include your explanation.');
-        const completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [
-                {
-                    role: 'user',
-                    content,
-                },
-            ],
-        });
-        return completion.choices[0].message.content;
-    }
-    catch (error) {
-        console.error('Error calling Gemini Google API:', error);
-        throw error;
-    }
-}
