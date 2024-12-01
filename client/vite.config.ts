@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
       emptyOutDir: true,
       outDir: 'build',
       rollupOptions: {
-        external: ['axios'], // Ensure axios is not treated as an external dependency
+        external: ['axios', 'dotenv'], // Ensure axios is not treated as an external dependency
         output: {
           chunkFileNames: 'assets/chunk-[hash].js',
         },
