@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { Spin, Input, Button } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 
+const HOST = import.meta.env.VITE_HOST
+const PORT = import.meta.env.VITE_PORT
+
+
 export const Popup = () => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [selectedText, setSelectedText] = useState('')
@@ -19,7 +23,7 @@ export const Popup = () => {
       context: 'no specific context',
     }
     const response = await fetch(
-      'http://localhost:3000/translate?' + new URLSearchParams(params).toString(),
+      `${HOST}:${PORT}/translate?` + new URLSearchParams(params).toString(),
     )
     const data = await response.json()
     setIsProcessing(false)
@@ -33,7 +37,7 @@ export const Popup = () => {
       context: 'no specific context',
     }
     const response = await fetch(
-      'http://localhost:3000/summarize?' + new URLSearchParams(params).toString(),
+      `${HOST}:${PORT}/summarize?` + new URLSearchParams(params).toString(),
     )
     const data = await response.json()
     setIsProcessing(false)
@@ -41,16 +45,18 @@ export const Popup = () => {
   }
 
   const handleClickTranslate = async () => {
-    if (selectedText.length > 0) {
-      const translatedText = await fetchTranslation(selectedText)
+    let needTranslateText = selectedText.length > 0 ? selectedText : inputText
+    if (needTranslateText.length > 0) {
+      const translatedText = await fetchTranslation(needTranslateText)
       setResult(translatedText)
       setAction('translate')
     }
   }
 
   const handleClickSummarize = async () => {
-    if (selectedText.length > 0) {
-      const summarizedText = await fetchSummarize(selectedText)
+    let needSummarizeText = selectedText.length > 0 ? selectedText : inputText
+    if (needSummarizeText.length > 0) {
+      const summarizedText = await fetchSummarize(needSummarizeText)
       setResult(summarizedText)
       setAction('summarize')
     }
@@ -73,7 +79,7 @@ export const Popup = () => {
   }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedText(e.target.value)
+    setInputText(e.target.value)
   }
   return (
     <div

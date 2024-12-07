@@ -1,7 +1,6 @@
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 
-console.log(HOST, PORT);
 async function translate(content: string) {
   try {
     const params = {
@@ -44,12 +43,8 @@ async function save(content: string, translation: string) {
   }
 }
 
-// chrome.runtime.onStartup.addListener( () => {
-//   console.log(`onStartup()`);
-// });
-
 chrome.runtime.onInstalled.addListener(() => {
-  // translate('')
+  console.log("Starting up the extension");
 })
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
