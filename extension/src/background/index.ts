@@ -1,3 +1,6 @@
+const HOST = import.meta.env.VITE_HOST;
+const PORT = import.meta.env.VITE_PORT;
+
 async function translate(content: string) {
   try {
     const params = {
@@ -9,7 +12,7 @@ async function translate(content: string) {
     }
 
     const response = await fetch(
-      'http://localhost:3000/translate?' + new URLSearchParams(params).toString(),
+      `${HOST}:${PORT}/translate?` + new URLSearchParams(params).toString(),
     )
     return response.json()
   } catch (error) {
@@ -25,7 +28,7 @@ async function save(content: string, translation: string) {
     }
 
     const response = await fetch(
-      'http://localhost:3000/save',
+      `${HOST}:${PORT}/save`,
       {
         method: 'POST',
         headers: {
@@ -40,9 +43,8 @@ async function save(content: string, translation: string) {
   }
 }
 
-
 chrome.runtime.onInstalled.addListener(() => {
-  translate('')
+  console.log("Starting up the extension");
 })
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

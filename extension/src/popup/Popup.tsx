@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { Spin, Input, Button } from 'antd'
 import { LoadingOutlined } from '@ant-design/icons'
 
+const HOST = import.meta.env.VITE_HOST
+const PORT = import.meta.env.VITE_PORT
+
 export const Popup = () => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [selectedText, setSelectedText] = useState('')
@@ -19,7 +22,7 @@ export const Popup = () => {
       context: 'no specific context',
     }
     const response = await fetch(
-      'http://localhost:3000/translate?' + new URLSearchParams(params).toString(),
+      `${HOST}:${PORT}/translate?` + new URLSearchParams(params).toString(),
     )
     const data = await response.json()
     setIsProcessing(false)
@@ -33,7 +36,21 @@ export const Popup = () => {
       context: 'no specific context',
     }
     const response = await fetch(
-      'http://localhost:3000/summarize?' + new URLSearchParams(params).toString(),
+      `${HOST}:${PORT}/summarize?` + new URLSearchParams(params).toString(),
+    )
+    const data = await response.json()
+    setIsProcessing(false)
+    return data.content
+  }
+
+  const fetchSmooth = async (text: string) => {
+    setIsProcessing(true)
+    const params = {
+      text,
+      context: 'no specific context',
+    }
+    const response = await fetch(
+      `${HOST}:${PORT}/smooth?` + new URLSearchParams(params).toString(),
     )
     const data = await response.json()
     setIsProcessing(false)
@@ -41,20 +58,32 @@ export const Popup = () => {
   }
 
   const handleClickTranslate = async () => {
-    if (selectedText.length > 0) {
-      const translatedText = await fetchTranslation(selectedText)
+    let needTranslateText = selectedText.length > 0 ? selectedText : inputText
+    if (needTranslateText.length > 0) {
+      const translatedText = await fetchTranslation(needTranslateText)
       setResult(translatedText)
       setAction('translate')
     }
   }
 
   const handleClickSummarize = async () => {
-    if (selectedText.length > 0) {
-      const summarizedText = await fetchSummarize(selectedText)
+    let needSummarizeText = selectedText.length > 0 ? selectedText : inputText
+    if (needSummarizeText.length > 0) {
+      const summarizedText = await fetchSummarize(needSummarizeText)
       setResult(summarizedText)
       setAction('summarize')
     }
   }
+
+  const handleClickSmooth = async () => {
+    let needSmoothText = selectedText.length > 0 ? selectedText : inputText
+    if (needSmoothText.length > 0) {
+      const summarizedText = await fetchSmooth(needSmoothText)
+      setResult(summarizedText)
+      setAction('summarize')
+    }
+  }
+
 
   const handleClosePopup = () => {
     setSelectedText('')
@@ -64,7 +93,7 @@ export const Popup = () => {
   useEffect(() => {
     chrome.storage.local.get('selections', async (result) => {
       const selections = result.selections || []
-      const validSelection = selections.pop();
+      const validSelection = selections.pop()
       if (validSelection && validSelection.length > 0) {
         setSelectedText(validSelection)
       }
@@ -73,7 +102,7 @@ export const Popup = () => {
   }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedText(e.target.value)
+    setInputText(e.target.value)
   }
   return (
     <div
@@ -152,7 +181,8 @@ export const Popup = () => {
         <Button onClick={handleClickTranslate} style={{ marginRight: '10px' }}>
           Translate
         </Button>
-        <Button onClick={handleClickSummarize}>Summarize</Button>
+        <Button onClick={handleClickSummarize} style={{ marginRight: '10px' }}>Summarize</Button>
+        <Button onClick={handleClickSmooth}>Smooth</Button>
       </div>
 
       <div className="footer" style={{ textAlign: 'right', fontSize: '12px', color: '#555' }}>
