@@ -181,7 +181,7 @@ export const Popup = () => {
         <Button onClick={handleClickTranslate} style={{ marginRight: '10px' }}>
           Translate
         </Button>
-        <Button onClick={handleClickSummarize}>Summarize</Button>
+        <Button onClick={handleClickSummarize} style={{ marginRight: '10px' }}>Summarize</Button>
         <Button onClick={handleClickSmooth}>Smooth</Button>
       </div>
 
