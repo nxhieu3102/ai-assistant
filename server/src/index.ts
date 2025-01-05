@@ -8,6 +8,7 @@ import bodyParser from 'body-parser'
 import translateRoutes from './routes/translateRoutes'
 import summarizeRoutes from './routes/summarizeRoutes'
 import saveRoutes from './routes/saveRoutes'
+import smoothRoutes from './routes/smoothRoutes'
 dotenv.config()
 
 const app = express()
@@ -47,6 +48,8 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
 app.use('/translate', translateRoutes)
 app.use('/summarize', summarizeRoutes)
 app.use('/save', saveRoutes)
+app.use('/smooth', smoothRoutes)
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}/`)
 })

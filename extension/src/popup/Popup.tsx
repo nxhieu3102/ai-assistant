@@ -5,7 +5,6 @@ import { LoadingOutlined } from '@ant-design/icons'
 const HOST = import.meta.env.VITE_HOST
 const PORT = import.meta.env.VITE_PORT
 
-
 export const Popup = () => {
   const [isProcessing, setIsProcessing] = useState(false)
   const [selectedText, setSelectedText] = useState('')
@@ -44,6 +43,20 @@ export const Popup = () => {
     return data.content
   }
 
+  const fetchSmooth = async (text: string) => {
+    setIsProcessing(true)
+    const params = {
+      text,
+      context: 'no specific context',
+    }
+    const response = await fetch(
+      `${HOST}:${PORT}/smooth?` + new URLSearchParams(params).toString(),
+    )
+    const data = await response.json()
+    setIsProcessing(false)
+    return data.content
+  }
+
   const handleClickTranslate = async () => {
     let needTranslateText = selectedText.length > 0 ? selectedText : inputText
     if (needTranslateText.length > 0) {
@@ -62,6 +75,16 @@ export const Popup = () => {
     }
   }
 
+  const handleClickSmooth = async () => {
+    let needSmoothText = selectedText.length > 0 ? selectedText : inputText
+    if (needSmoothText.length > 0) {
+      const summarizedText = await fetchSmooth(needSmoothText)
+      setResult(summarizedText)
+      setAction('summarize')
+    }
+  }
+
+
   const handleClosePopup = () => {
     setSelectedText('')
     setResult('')
@@ -70,7 +93,7 @@ export const Popup = () => {
   useEffect(() => {
     chrome.storage.local.get('selections', async (result) => {
       const selections = result.selections || []
-      const validSelection = selections.pop();
+      const validSelection = selections.pop()
       if (validSelection && validSelection.length > 0) {
         setSelectedText(validSelection)
       }
@@ -159,6 +182,7 @@ export const Popup = () => {
           Translate
         </Button>
         <Button onClick={handleClickSummarize}>Summarize</Button>
+        <Button onClick={handleClickSmooth}>Smooth</Button>
       </div>
 
       <div className="footer" style={{ textAlign: 'right', fontSize: '12px', color: '#555' }}>
