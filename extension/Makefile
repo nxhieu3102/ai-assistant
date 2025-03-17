@@ -1,4 +1,4 @@
 dev:
 	@cp .env.local .env && yarn build
 prod:
-	yarn build --mode prod
+	@cp .env.prod .env && yarn build --mode prod
