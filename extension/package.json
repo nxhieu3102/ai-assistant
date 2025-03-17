@@ -25,10 +25,13 @@
   "dependencies": {
     "@types/axios": "^0.14.4",
     "@types/dotenv": "^6.1.1",
+    "@types/styled-components": "^5.1.34",
     "antd": "^5.22.2",
     "axios": "^1.7.7",
+    "framer-motion": "^12.5.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "styled-components": "^6.1.15"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.19",

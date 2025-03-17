@@ -1,0 +1,109 @@
+.translation-popup {
+  width: 400px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  font-size: 14px;
+  color: #333;
+  position: absolute;
+  z-index: 1001;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.translation-popup select {
+  width: 100%;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background-color: #ffffff;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.translation-popup select:hover {
+  border-color: #40a9ff;
+}
+
+.translation-popup select:focus {
+  outline: none;
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.translation-content {
+  margin-bottom: 16px;
+}
+
+.translation-content span {
+  display: block;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.translation-content h3 {
+  margin: 16px 0 8px;
+  color: #262626;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.translation-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.translation-footer button {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid #40a9ff;
+  background-color: #ffffff;
+  color: #40a9ff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.translation-footer button:hover {
+  background-color: #e6f7ff;
+  border-color: #40a9ff;
+}
+
+.translation-footer button.saved {
+  background-color: #f6ffed;
+  border-color: #52c41a;
+  color: #52c41a;
+}
+
+.translation-footer a {
+  color: #40a9ff;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.translation-footer a:hover {
+  color: #69c0ff;
+}
+
+.selection-icon {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background-size: contain;
+  cursor: pointer;
+  z-index: 1000;
+  pointer-events: auto;
+  transition: transform 0.2s ease;
+}
+
+.selection-icon:hover {
+  transform: scale(1.1);
+} 
