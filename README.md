@@ -20,33 +20,6 @@ A Chrome extension that provides instant translation and text processing capabil
   - Russian
   - Arabic
 
-## Project Structure
-.
-├── extension/ # Chrome extension source code
-│ ├── src/
-│ │ ├── popup/ # Extension popup UI components
-│ │ │ ├── Popup.tsx # Main popup component
-│ │ │ └── styles.css # Popup styles
-│ │ └── contentScript/ # Content script for webpage integration
-│ │ ├── index.ts # Main content script
-│ │ └── styles.css # Content script styles
-│ ├── public/ # Static assets
-│ │ └── img/ # Extension icons and images
-│ ├── manifest.json # Extension manifest
-│ └── package.json # Extension dependencies
-├── server/ # Backend server
-│ ├── src/ # Server source code
-│ │ └── index.ts # Main server file
-│ ├── Dockerfile # Server containerization
-│ └── package.json # Server dependencies
-├── web/ # Web interface
-│ ├── src/
-│ │ └── app/ # Next.js app directory
-│ └── package.json # Web dependencies
-└── .github/ # GitHub configuration
-└── workflows/ # CI/CD workflows
-└── ci-cd.yml # CI/CD pipeline configuration
-
 ## Technology Stack
 
 ### Frontend (Extension)
