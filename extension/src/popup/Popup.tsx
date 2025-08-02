@@ -182,10 +182,13 @@ const StyledCard = styled(Card)`
   }
 `
 
-const LanguageSelector = styled.div`
-  margin-bottom: 16px;
-  .ant-select {
-    width: 100%;
+const LanguageRow = styled.div`
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  .ant-select { 
+    flex: 1; 
   }
 `
 
@@ -294,9 +297,8 @@ export const Popup = () => {
   }
 
   const handleClickTranslate = async () => {
-    let needTranslateText = selectedText.length > 0 ? selectedText : inputText
-    if (needTranslateText.length > 0) {
-      const translatedText = await fetchTranslation(needTranslateText)
+    if (inputText.length > 0) {
+      const translatedText = await fetchTranslation(inputText)
       if (translatedText) {
         setResult(translatedText)
         setAction('translate')
@@ -305,9 +307,8 @@ export const Popup = () => {
   }
 
   const handleClickSummarize = async () => {
-    let needSummarizeText = selectedText.length > 0 ? selectedText : inputText
-    if (needSummarizeText.length > 0) {
-      const summarizedText = await fetchSummarize(needSummarizeText)
+    if (inputText.length > 0) {
+      const summarizedText = await fetchSummarize(inputText)
       if (summarizedText) {
         setResult(summarizedText)
         setAction('summarize')
@@ -316,9 +317,8 @@ export const Popup = () => {
   }
 
   const handleClickSmooth = async () => {
-    let needSmoothText = selectedText.length > 0 ? selectedText : inputText
-    if (needSmoothText.length > 0) {
-      const smoothedText = await fetchSmooth(needSmoothText)
+    if (inputText.length > 0) {
+      const smoothedText = await fetchSmooth(inputText)
       if (smoothedText) {
         setResult(smoothedText)
         setAction('smooth')
@@ -328,6 +328,7 @@ export const Popup = () => {
 
   const handleClosePopup = () => {
     setSelectedText('')
+    setInputText('')
     setResult('')
   }
 
@@ -360,6 +361,7 @@ export const Popup = () => {
       const validSelection = selections.pop()
       if (validSelection && validSelection.length > 0) {
         setSelectedText(validSelection)
+        setInputText(validSelection) // Make selected text editable
       }
       chrome.storage.local.set({ selections: [] })
     })
@@ -373,6 +375,15 @@ export const Popup = () => {
   const handleDefaultLanguageChange = (value: SupportedLanguage) => {
     setDefaultLanguage(value)
     chrome.storage.sync.set({ defaultLanguage: value })
+  }
+
+  const handleSwapLanguages = () => {
+    setDefaultLanguage(targetLanguage)
+    setTargetLanguage(defaultLanguage)
+    chrome.storage.sync.set({
+      defaultLanguage: targetLanguage,
+      targetLanguage: defaultLanguage,
+    })
   }
 
   return (
@@ -390,40 +401,38 @@ export const Popup = () => {
               <Space>
                 <GlobalOutlined />
                 <Text strong>{getTranslation('defaultLanguage')}</Text>
-                <Tooltip title="Select your preferred interface language">
-                  <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
-                </Tooltip>
-              </Space>
-              <Select
-                value={defaultLanguage}
-                onChange={handleDefaultLanguageChange}
-                style={{ width: '100%' }}
-              >
-                {LANGUAGES.map(lang => (
-                  <Option key={`default-${lang}`} value={lang}>{lang}</Option>
-                ))}
-              </Select>
-            </Space>
-          </div>
-
-          <div>
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
-              <Space>
+                <SwapOutlined style={{ margin: '0 8px' }} />
                 <TranslationOutlined />
                 <Text strong>{getTranslation('targetLanguage')}</Text>
-                <Tooltip title="Select the language you want to translate to">
-                  <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
-                </Tooltip>
               </Space>
-              <Select
-                value={targetLanguage}
-                onChange={handleTargetLanguageChange}
-                style={{ width: '100%' }}
-              >
-                {LANGUAGES.map(lang => (
-                  <Option key={`target-${lang}`} value={lang}>{lang}</Option>
-                ))}
-              </Select>
+              <LanguageRow>
+                <Select
+                  value={defaultLanguage}
+                  onChange={handleDefaultLanguageChange}
+                  placeholder="Default Language"
+                >
+                  {LANGUAGES.map(lang => (
+                    <Option key={`default-${lang}`} value={lang}>{lang}</Option>
+                  ))}
+                </Select>
+                <Tooltip title="Swap languages">
+                  <Button
+                    shape="circle"
+                    icon={<SwapOutlined />}
+                    onClick={handleSwapLanguages}
+                    size="small"
+                  />
+                </Tooltip>
+                <Select
+                  value={targetLanguage}
+                  onChange={handleTargetLanguageChange}
+                  placeholder="Target Language"
+                >
+                  {LANGUAGES.map(lang => (
+                    <Option key={`target-${lang}`} value={lang}>{lang}</Option>
+                  ))}
+                </Select>
+              </LanguageRow>
             </Space>
           </div>
 
@@ -456,17 +465,12 @@ export const Popup = () => {
 
           {/* Text Input */}
           <div>
-            {selectedText.length > 0 ? (
-              <Card size="small" style={{ background: '#f5f5f5' }}>
-                <Text>{selectedText}</Text>
-              </Card>
-            ) : (
-              <Input.TextArea
-                placeholder={getTranslation('enterText')}
-                onChange={handleInputChange}
-                rows={4}
-              />
-            )}
+            <Input.TextArea
+              value={inputText}
+              placeholder={getTranslation('enterText')}
+              onChange={handleInputChange}
+              rows={4}
+            />
           </div>
 
           {/* Result */}

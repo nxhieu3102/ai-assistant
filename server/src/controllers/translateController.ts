@@ -11,10 +11,10 @@ class TranslateController {
         needExplanation: req.query.needExplanation === 'true',
         context: req.query.context as string,
       }
-      console.log(payload);
+      console.log('[translate request]', payload);
       const translateService = new TranslateService()
       const result = await translateService.translate(payload)
-      console.log("result:", result);
+      console.log('[translate response]', result);
       res.send(result)
     } catch (error) {
       console.error('Error calling Gemini Google API:', error)

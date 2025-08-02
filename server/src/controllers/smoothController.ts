@@ -11,10 +11,10 @@ class SmoothController {
         needExplanation: req.query.needExplanation === 'true',
         context: req.query.context as string,
       }
-      
+      console.log('[smooth request]', payload);
       const service = new SmoothService()
       const result = await service.smooth(payload)
-      
+      console.log('[smooth response]', result);
       res.send(result)
     } catch (error) {
       console.error('Error calling Gemini Google API:', error)

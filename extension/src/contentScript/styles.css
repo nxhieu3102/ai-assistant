@@ -106,4 +106,77 @@
 
 .selection-icon:hover {
   transform: scale(1.1);
-} 
+}
+
+.mini-tooltip {
+  position: absolute;
+  z-index: 1002;
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 0;
+  min-width: 200px;
+  max-width: 300px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.tooltip-row {
+  padding: 6px 12px;
+  cursor: default;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.tooltip-row:last-child {
+  border-bottom: none;
+}
+
+.tooltip-row.translate-row {
+  color: #262626;
+  background-color: #f8f9fa;
+}
+
+.tooltip-row.translate-row:hover {
+  background-color: #e6f7ff;
+  cursor: pointer;
+}
+
+.tooltip-row.smooth-row {
+  color: #1677ff;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.tooltip-row.smooth-row:hover {
+  background-color: #e6f7ff;
+  color: #0958d9;
+}
+
+.replace-notification {
+  animation: slideInRight 0.3s ease-out, fadeOut 0.3s ease-in 1.7s forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

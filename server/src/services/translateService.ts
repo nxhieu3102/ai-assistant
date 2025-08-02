@@ -24,7 +24,6 @@ class TranslateService {
           },
         ],
       })
-      console.log(completion.choices);
       return {
         status: 'success',
         error: '',

@@ -20,6 +20,22 @@ async function translate(content: string) {
   }
 }
 
+async function smooth(content: string) {
+  try {
+    const params = {
+      text: content,
+      context: 'no specific context',
+    }
+
+    const response = await fetch(
+      `${HOST}:${PORT}/smooth?` + new URLSearchParams(params).toString(),
+    )
+    return response.json()
+  } catch (error) {
+    console.error('Error calling API:', error)
+  }
+}
+
 async function save(content: string, translation: string) {
   try {
     const params = {
@@ -50,6 +66,16 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'translate') {
     translate(request.content)
+      .then((result) => {
+        sendResponse(result)
+      })
+      .catch((error) => {
+        sendResponse({ status: 'API call failed', error: error.message })
+      })
+    return true
+  }
+  if (request.action === 'smooth') {
+    smooth(request.content)
       .then((result) => {
         sendResponse(result)
       })
