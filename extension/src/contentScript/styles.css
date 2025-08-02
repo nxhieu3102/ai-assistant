@@ -124,7 +124,8 @@
 }
 
 .tooltip-row {
-  padding: 6px 12px;
+  /* Reduced internal padding for a more compact look */
+  padding: 0px 0px;
   cursor: default;
   white-space: pre-wrap;
   word-wrap: break-word;

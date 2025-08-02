@@ -97,7 +97,7 @@ class TranslationPopup {
       icon = document.createElement('div')
       icon.id = 'selection-icon'
       icon.className = 'selection-icon'
-      icon.style.background = `url(${chrome.runtime.getURL('img/icon.png')})`
+      icon.style.background = `url(${chrome.runtime.getURL('img/new_logo.png')})`
       icon.style.backgroundSize = 'contain'
       icon.style.position = 'absolute'
       icon.style.width = '24px'
@@ -147,6 +147,11 @@ class TranslationPopup {
     if (!icon || !this.lastSelection?.text) return
 
     const tooltip = this.getOrCreateMiniTooltip()
+    // Ensure tooltip is in the DOM before we try to update its content
+    if (!document.getElementById('mini-tooltip')) {
+      document.body.appendChild(tooltip)
+    }
+
     const iconRect = icon.getBoundingClientRect()
     
     tooltip.style.top = `${iconRect.bottom + window.scrollY + 5}px`
@@ -160,10 +165,6 @@ class TranslationPopup {
     } else {
       this.updateTooltipContent('Loading...', 'Loading...')
       this.fetchTranslateAndSmooth(this.lastSelection.text)
-    }
-
-    if (!document.getElementById('mini-tooltip')) {
-      document.body.appendChild(tooltip)
     }
   }
 

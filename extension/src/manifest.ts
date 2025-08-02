@@ -10,14 +10,14 @@ export default defineManifest({
   version: packageData.version,
   manifest_version: 3,
   icons: {
-    16: 'img/logo-16.png',
-    32: 'img/logo-34.png',
-    48: 'img/logo-48.png',
-    128: 'img/logo-128.png',
+    16: 'img/new_logo.png',
+    32: 'img/new_logo.png',
+    48: 'img/new_logo.png',
+    128: 'img/new_logo.png',
   },
   action: {
     default_popup: 'popup.html',
-    default_icon: 'img/logo-48.png',
+    default_icon: 'img/new_logo.png',
   },
   options_page: 'options.html',
   devtools_page: 'devtools.html',
@@ -36,7 +36,7 @@ export default defineManifest({
   },
   web_accessible_resources: [
     {
-      resources: ['img/logo-16.png', 'img/logo-34.png', 'img/logo-48.png', 'img/logo-128.png', 'img/icon.png'],
+      resources: ['img/new_logo.png'],
       matches: ['<all_urls>'], // Allows all pages to access these resources.
     },
   ],
