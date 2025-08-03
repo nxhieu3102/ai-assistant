@@ -40,7 +40,7 @@ export default defineManifest({
       matches: ['<all_urls>'], // Allows all pages to access these resources.
     },
   ],
-  permissions: ['sidePanel', 'storage'],
+  permissions: ['sidePanel', 'storage', 'alarms', 'notifications'],
   chrome_url_overrides: {
     newtab: 'newtab.html',
   },

@@ -1,6 +1,8 @@
 import React from 'react'
 import styled from 'styled-components'
 import { motion } from 'framer-motion'
+import { Tooltip } from 'antd'
+import { getShortcutText } from '../hooks/useKeyboardNavigation'
 
 interface Tab {
   id: string
@@ -45,7 +47,28 @@ const TabButton = styled(motion.button)<{ isActive: boolean }>`
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.4);
+    border: 2px solid #1890ff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #1890ff;
+    outline-offset: 2px;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    border: 2px solid currentColor;
+    
+    &:focus {
+      outline: 3px solid;
+      outline-offset: 2px;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 
   ${props => props.isActive && `
@@ -67,19 +90,26 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange }) => {
 
   return (
     <TabsContainer>
-      <TabsList role="tablist">
-        {tabs.map((tab) => (
-          <TabButton
+      <TabsList role="tablist" aria-label="Navigation tabs">
+        {tabs.map((tab, index) => (
+          <Tooltip
             key={tab.id}
-            isActive={tab.id === activeTab}
-            onClick={() => onTabChange(tab.id)}
-            role="tab"
-            aria-selected={tab.id === activeTab}
-            aria-controls={`tabpanel-${tab.id}`}
-            whileTap={{ scale: 0.98 }}
+            title={`${tab.label} (${getShortcutText(index + 1)})`}
+            placement="bottom"
           >
-            {tab.label}
-          </TabButton>
+            <TabButton
+              isActive={tab.id === activeTab}
+              onClick={() => onTabChange(tab.id)}
+              role="tab"
+              aria-selected={tab.id === activeTab}
+              aria-controls={`tabpanel-${tab.id}`}
+              id={`tab-${tab.id}`}
+              tabIndex={tab.id === activeTab ? 0 : -1}
+              whileTap={{ scale: 0.98 }}
+            >
+              {tab.label}
+            </TabButton>
+          </Tooltip>
         ))}
       </TabsList>
       
@@ -92,6 +122,8 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange }) => {
         role="tabpanel"
         id={`tabpanel-${activeTab}`}
         aria-labelledby={`tab-${activeTab}`}
+        tabIndex={0}
+        aria-live="polite"
       >
         {activeTabContent}
       </TabContent>

@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons'
 import { motion, AnimatePresence } from 'framer-motion'
 import styled from 'styled-components'
+import { getTranslation, SupportedLanguage, LANGUAGES } from '../services/i18n'
 
 const { Text, Title } = Typography
 const { Panel } = Collapse
@@ -27,146 +28,6 @@ const { Option } = Select
 
 const HOST = import.meta.env.VITE_HOST
 const PORT = import.meta.env.VITE_PORT
-
-// Available languages for translation
-const LANGUAGES = [
-  'English',
-  'Vietnamese',
-  'Spanish',
-  'French',
-  'German',
-  'Chinese',
-  'Japanese',
-  'Korean',
-  'Russian',
-  'Arabic'
-] as const
-
-// Define TypeScript types for translation
-type SupportedLanguage = typeof LANGUAGES[number]
-type TranslationKey = 'translate' | 'summarize' | 'smooth' | 'targetLanguage' | 'defaultLanguage' | 'summary' | 'enterText' | 'context' | 'addContext'
-
-type TranslationSet = {
-  [key in TranslationKey]: string
-}
-
-type Translations = {
-  [key in SupportedLanguage]?: TranslationSet
-}
-
-// UI translations
-const UI_TRANSLATIONS: Translations = {
-  English: {
-    translate: 'Translate',
-    summarize: 'Summarize',
-    smooth: 'Smooth',
-    targetLanguage: 'Target Language',
-    defaultLanguage: 'Default Language',
-    summary: 'Summary',
-    enterText: 'Enter text...',
-    context: 'Context',
-    addContext: 'Add context to improve results'
-  },
-  Vietnamese: {
-    translate: 'Dịch',
-    summarize: 'Tóm tắt',
-    smooth: 'Làm mượt',
-    targetLanguage: 'Ngôn ngữ đích',
-    defaultLanguage: 'Ngôn ngữ mặc định',
-    summary: 'Tóm tắt',
-    enterText: 'Nhập văn bản...',
-    context: 'Ngữ cảnh',
-    addContext: 'Thêm ngữ cảnh để cải thiện kết quả'
-  },
-  Spanish: {
-    translate: 'Traducir',
-    summarize: 'Resumir',
-    smooth: 'Suavizar',
-    targetLanguage: 'Idioma de destino',
-    defaultLanguage: 'Idioma predeterminado',
-    summary: 'Resumen',
-    enterText: 'Ingrese texto...',
-    context: 'Contexto',
-    addContext: 'Añadir contexto para mejorar los resultados'
-  },
-  French: {
-    translate: 'Traduire',
-    summarize: 'Résumer',
-    smooth: 'Lisser',
-    targetLanguage: 'Langue cible',
-    defaultLanguage: 'Langue par défaut',
-    summary: 'Résumé',
-    enterText: 'Entrez du texte...',
-    context: 'Contexte',
-    addContext: 'Ajouter du contexte pour améliorer les résultats'
-  },
-  German: {
-    translate: 'Übersetzen',
-    summarize: 'Zusammenfassen',
-    smooth: 'Glätten',
-    targetLanguage: 'Zielsprache',
-    defaultLanguage: 'Standardsprache',
-    summary: 'Zusammenfassung',
-    enterText: 'Text eingeben...',
-    context: 'Kontext',
-    addContext: 'Kontext hinzufügen, um Ergebnisse zu verbessern'
-  },
-  Chinese: {
-    translate: '翻译',
-    summarize: '总结',
-    smooth: '润色',
-    targetLanguage: '目标语言',
-    defaultLanguage: '默认语言',
-    summary: '摘要',
-    enterText: '请输入文本...',
-    context: '上下文',
-    addContext: '添加上下文以改善结果'
-  },
-  Japanese: {
-    translate: '翻訳',
-    summarize: '要約',
-    smooth: '滑らかに',
-    targetLanguage: '対象言語',
-    defaultLanguage: 'デフォルト言語',
-    summary: '要約',
-    enterText: 'テキストを入力...',
-    context: 'コンテキスト',
-    addContext: '結果を向上させるためのコンテキストを追加'
-  },
-  Korean: {
-    translate: '번역',
-    summarize: '요약',
-    smooth: '매끄럽게',
-    targetLanguage: '대상 언어',
-    defaultLanguage: '기본 언어',
-    summary: '요약',
-    enterText: '텍스트를 입력하세요...',
-    context: '맥락',
-    addContext: '결과를 개선하기 위한 맥락 추가'
-  },
-  Russian: {
-    translate: 'Перевести',
-    summarize: 'Резюмировать',
-    smooth: 'Сгладить',
-    targetLanguage: 'Целевой язык',
-    defaultLanguage: 'Язык по умолчанию',
-    summary: 'Сводка',
-    enterText: 'Введите текст...',
-    context: 'Контекст',
-    addContext: 'Добавьте контекст для улучшения результатов'
-  },
-  Arabic: {
-    translate: 'ترجمة',
-    summarize: 'تلخيص',
-    smooth: 'تنعيم',
-    targetLanguage: 'اللغة المستهدفة',
-    defaultLanguage: 'اللغة الافتراضية',
-    summary: 'ملخص',
-    enterText: 'أدخل النص...',
-    context: 'السياق',
-    addContext: 'أضف سياقًا لتحسين النتائج'
-  }
-}
 
 const LanguageRow = styled.div`
   display: flex;
@@ -213,11 +74,8 @@ export const TranslateTab = () => {
   const [contextText, setContextText] = useState('')
   const [showContextInput, setShowContextInput] = useState(false)
 
-  // Get UI translations based on selected default language
-  const getTranslation = (key: TranslationKey): string => {
-    const translations = UI_TRANSLATIONS[defaultLanguage] || UI_TRANSLATIONS.English
-    return translations?.[key] || UI_TRANSLATIONS.English?.[key] || key
-  }
+  // Helper function to get translations
+  const t = (key: any) => getTranslation(key, defaultLanguage)
 
   const fetchTranslation = async (text: string) => {
     setIsProcessing(true)
@@ -372,10 +230,10 @@ export const TranslateTab = () => {
         <Space direction="vertical" size="small" style={{ width: '100%' }}>
           <Space>
             <GlobalOutlined />
-            <Text strong>{getTranslation('defaultLanguage')}</Text>
+            <Text strong>{t('defaultLanguage')}</Text>
             <SwapOutlined style={{ margin: '0 8px' }} />
             <TranslationOutlined />
-            <Text strong>{getTranslation('targetLanguage')}</Text>
+            <Text strong>{t('targetLanguage')}</Text>
           </Space>
           <LanguageRow>
             <Select
@@ -417,7 +275,7 @@ export const TranslateTab = () => {
           header={
             <Space>
               <SwapOutlined />
-              <Text>{getTranslation('addContext')}</Text>
+              <Text>{t('addContext')}</Text>
             </Space>
           } 
           key="1"
@@ -426,7 +284,7 @@ export const TranslateTab = () => {
             <Input.TextArea
               value={contextText}
               onChange={handleContextChange}
-              placeholder={getTranslation('context')}
+              placeholder={t('context')}
               rows={3}
             />
           </ContextInput>
@@ -439,7 +297,7 @@ export const TranslateTab = () => {
       <div>
         <Input.TextArea
           value={inputText}
-          placeholder={getTranslation('enterText')}
+          placeholder={t('enterText')}
           onChange={handleInputChange}
           rows={4}
         />
@@ -456,7 +314,7 @@ export const TranslateTab = () => {
             <ResultContainer>
               <Space direction="vertical" size="small" style={{ width: '100%' }}>
                 <Title level={5} style={{ margin: 0 }}>
-                  {action === 'translate' ? targetLanguage : getTranslation('summary')}
+                  {action === 'translate' ? targetLanguage : t('summary')}
                 </Title>
                 <Text>{result}</Text>
               </Space>
@@ -472,19 +330,19 @@ export const TranslateTab = () => {
           onClick={handleClickTranslate}
           loading={isProcessing && action === 'translate'}
         >
-          {getTranslation('translate')}
+          {t('translate')}
         </Button>
         <Button 
           onClick={handleClickSummarize}
           loading={isProcessing && action === 'summarize'}
         >
-          {getTranslation('summarize')}
+          {t('summarize')}
         </Button>
         <Button 
           onClick={handleClickSmooth}
           loading={isProcessing && action === 'smooth'}
         >
-          {getTranslation('smooth')}
+          {t('smooth')}
         </Button>
       </ActionButtons>
     </Space>

@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Checkbox, Button, Typography } from 'antd'
 import { DeleteOutlined } from '@ant-design/icons'
 import { motion } from 'framer-motion'
 import styled from 'styled-components'
+import { getTranslation, SupportedLanguage } from '../../services/i18n'
 
 const { Text } = Typography
 
@@ -34,16 +35,39 @@ const TaskContainer = styled(motion.div)<{ completed: boolean }>`
     border-color: ${props => props.completed ? '#52c41a' : '#1890ff'};
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
+
+  &:focus-within {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.2);
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    border: 3px solid currentColor;
+    background: ${props => props.completed ? 'Mark' : 'Canvas'};
+    color: ${props => props.completed ? 'MarkText' : 'CanvasText'};
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 `
 
 const TaskText = styled(Text)<{ completed: boolean }>`
   flex: 1;
   font-size: 14px;
   line-height: 1.4;
-  color: ${props => props.completed ? '#52c41a' : '#262626'};
+  color: ${props => props.completed ? '#389e0d' : '#262626'}; /* Improved contrast */
   text-decoration: ${props => props.completed ? 'line-through' : 'none'};
-  opacity: ${props => props.completed ? 0.7 : 1};
+  opacity: ${props => props.completed ? 0.8 : 1}; /* Improved contrast */
   word-break: break-word;
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    color: ${props => props.completed ? 'MarkText' : 'CanvasText'};
+    opacity: 1;
+  }
 `
 
 const DeleteButton = styled(Button)`
@@ -57,8 +81,20 @@ const DeleteButton = styled(Button)`
   justify-content: center;
   padding: 0;
 
-  ${TaskContainer}:hover & {
+  ${TaskContainer}:hover &,
+  ${TaskContainer}:focus-within & {
     opacity: 1;
+  }
+
+  &:focus {
+    opacity: 1;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.3);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ff4d4f;
+    outline-offset: 2px;
   }
 
   &:hover {
@@ -66,6 +102,23 @@ const DeleteButton = styled(Button)`
     border-color: #ff4d4f;
     color: #ffffff;
     transform: scale(1.1);
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    opacity: 1;
+    border: 2px solid currentColor;
+    
+    &:focus {
+      outline: 3px solid;
+      outline-offset: 2px;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    transform: none;
+    transition: none;
   }
 `
 
@@ -83,9 +136,45 @@ const StyledCheckbox = styled(Checkbox)`
   .ant-checkbox:hover .ant-checkbox-inner {
     border-color: #1890ff;
   }
+
+  .ant-checkbox:focus .ant-checkbox-inner {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.3);
+  }
+
+  .ant-checkbox-input:focus-visible + .ant-checkbox-inner {
+    outline: 2px solid #1890ff;
+    outline-offset: 2px;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .ant-checkbox {
+      border: 3px solid currentColor;
+    }
+    
+    .ant-checkbox:focus .ant-checkbox-inner {
+      outline: 3px solid;
+      outline-offset: 2px;
+    }
+  }
 `
 
 export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) => {
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('English')
+
+  // Load current language from storage
+  useEffect(() => {
+    chrome.storage.sync.get(['defaultLanguage'], (result) => {
+      if (result.defaultLanguage) {
+        setCurrentLanguage(result.defaultLanguage as SupportedLanguage)
+      }
+    })
+  }, [])
+
+  // Helper function to get translations
+  const t = (key: any) => getTranslation(key, currentLanguage)
+
   return (
     <TaskContainer
       completed={task.completed}
@@ -94,13 +183,21 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) 
       exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.2 }}
       layout
+      role="listitem"
+      aria-label={`Task: ${task.text}`}
     >
       <StyledCheckbox
         checked={task.completed}
         onChange={() => onToggle(task.id)}
+        aria-label={task.completed ? `Mark "${task.text}" as incomplete` : `Mark "${task.text}" as complete`}
+        aria-describedby={`task-text-${task.id}`}
       />
       
-      <TaskText completed={task.completed}>
+      <TaskText 
+        completed={task.completed}
+        id={`task-text-${task.id}`}
+        aria-label={task.completed ? `Completed task: ${task.text}` : `Pending task: ${task.text}`}
+      >
         {task.text}
       </TaskText>
       
@@ -108,7 +205,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete }) 
         type="text"
         icon={<DeleteOutlined />}
         onClick={() => onDelete(task.id)}
-        title="Delete task"
+        title={t('deleteTask')}
+        aria-label={`Delete task: ${task.text}`}
         size="small"
       />
     </TaskContainer>

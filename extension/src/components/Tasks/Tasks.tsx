@@ -6,6 +6,7 @@ import styled from 'styled-components'
 import { TaskInput } from './TaskInput'
 import { TaskItem, Task } from './TaskItem'
 import { loadTodaysTasks, saveTodaysTasks, getTaskStats, cleanupOldTasks } from '../../services/taskStorage'
+import { getTranslation, SupportedLanguage } from '../../services/i18n'
 
 const { Title, Text } = Typography
 
@@ -62,6 +63,21 @@ const TasksList = styled.div`
   &::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
   }
+
+  &:focus {
+    outline: 2px solid #1890ff;
+    outline-offset: 2px;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    border: 2px solid currentColor;
+    
+    &:focus {
+      outline: 3px solid;
+      outline-offset: 2px;
+    }
+  }
 `
 
 const EmptyContainer = styled.div`
@@ -79,6 +95,19 @@ export const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [hasMigrated, setHasMigrated] = useState(false)
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('English')
+
+  // Load current language from storage
+  useEffect(() => {
+    chrome.storage.sync.get(['defaultLanguage'], (result) => {
+      if (result.defaultLanguage) {
+        setCurrentLanguage(result.defaultLanguage as SupportedLanguage)
+      }
+    })
+  }, [])
+
+  // Helper function to get translations
+  const t = (key: any) => getTranslation(key, currentLanguage)
 
   // Load tasks from storage on component mount with automatic migration
   useEffect(() => {
@@ -103,7 +132,7 @@ export const Tasks: React.FC = () => {
         })
         
         if (hasOlderTasks && !hasTasksFromToday) {
-          message.info('Uncompleted tasks from yesterday have been moved to today!')
+          message.info(t('tasksMigrated'))
         }
         
         // Cleanup old tasks in the background
@@ -111,7 +140,7 @@ export const Tasks: React.FC = () => {
         
       } catch (error) {
         console.error('Error loading tasks:', error)
-        message.error('Failed to load tasks')
+        message.error(`${t('error')}: Failed to load tasks`)
       } finally {
         setIsLoading(false)
       }
@@ -125,7 +154,7 @@ export const Tasks: React.FC = () => {
     if (!isLoading && hasMigrated) {
       saveTodaysTasks(tasks).catch((error) => {
         console.error('Error saving tasks:', error)
-        message.error('Failed to save tasks')
+        message.error(`${t('error')}: Failed to save tasks`)
       })
     }
   }, [tasks, isLoading, hasMigrated])
@@ -159,42 +188,51 @@ export const Tasks: React.FC = () => {
   const pendingTasks = tasks.filter(task => !task.completed)
 
   if (isLoading) {
-    return <div>Loading tasks...</div>
+    return <div>{t('loading')}</div>
   }
 
   return (
-    <TasksContainer>
+    <TasksContainer role="main" aria-labelledby="tasks-heading">
       <TasksHeader>
-        <Title level={4} style={{ margin: 0, color: '#1890ff' }}>
-          📋 Today's Tasks
+        <Title 
+          id="tasks-heading" 
+          level={4} 
+          style={{ margin: 0, color: '#1890ff' }}
+          aria-live="polite"
+        >
+          📋 {t('todaysTasks')}
         </Title>
-        <TasksStats>
-          <StatItem>
-            <CheckCircleOutlined style={{ color: '#52c41a' }} />
+        <TasksStats aria-label="Task statistics">
+          <StatItem aria-label={`${completedCount} completed tasks`}>
+            <CheckCircleOutlined style={{ color: '#52c41a' }} aria-hidden="true" />
             <Text>{completedCount}</Text>
           </StatItem>
-          <StatItem>
-            <ClockCircleOutlined style={{ color: '#faad14' }} />
+          <StatItem aria-label={`${pendingCount} pending tasks`}>
+            <ClockCircleOutlined style={{ color: '#faad14' }} aria-hidden="true" />
             <Text>{pendingCount}</Text>
           </StatItem>
         </TasksStats>
       </TasksHeader>
 
-      <TaskInput onAddTask={addTask} placeholder="What needs to be done today?" />
+      <TaskInput onAddTask={addTask} placeholder={t('taskPlaceholder')} />
 
       {totalTasks === 0 ? (
-        <EmptyContainer>
+        <EmptyContainer role="status" aria-live="polite">
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
-              <span style={{ color: '#999' }}>
-                No tasks yet. Add your first task above!
+              <span style={{ color: '#666' }}> {/* Improved contrast */}
+                {t('noTasksYet')}
               </span>
             }
           />
         </EmptyContainer>
       ) : (
-        <TasksList>
+        <TasksList 
+          role="list" 
+          aria-label={`${totalTasks} tasks, ${pendingCount} pending, ${completedCount} completed`}
+          tabIndex={0}
+        >
           <AnimatePresence>
             {/* Show pending tasks first */}
             {pendingTasks.map(task => (
@@ -208,8 +246,10 @@ export const Tasks: React.FC = () => {
             
             {/* Divider between pending and completed */}
             {pendingTasks.length > 0 && completedTasks.length > 0 && (
-              <Divider style={{ margin: '16px 0', fontSize: '12px', color: '#999' }}>
-                Completed ({completedTasks.length})
+              <Divider 
+                style={{ margin: '16px 0', fontSize: '12px', color: '#666' }} /* Improved contrast */
+              >
+                {t('completedTasks')} ({completedTasks.length})
               </Divider>
             )}
             

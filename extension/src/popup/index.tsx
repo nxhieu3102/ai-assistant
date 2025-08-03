@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { motion } from 'framer-motion'
 import styled from 'styled-components'
-import { Button } from 'antd'
+import { Button, Tooltip } from 'antd'
 import { CloseOutlined } from '@ant-design/icons'
 import { Tabs } from '../components/Tabs'
 import { TranslateTab } from '../components/TranslateTab'
 import { Tasks } from '../components/Tasks/Tasks'
-import { PomoPlaceholder } from '../components/PomoPlaceholder'
+import { PomodoroTimer } from '../components/PomoPlaceholder'
+import { useKeyboardNavigation, getShortcutText } from '../hooks/useKeyboardNavigation'
+import { getTranslation, SupportedLanguage } from '../services/i18n'
 import './index.css'
 
 const PopupContainer = motion.div
@@ -23,15 +25,22 @@ const StyledCard = styled.div`
 
 const Popup = () => {
   const [activeTab, setActiveTab] = useState('translate')
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('English')
 
-  // Load saved active tab on mount
+  // Load saved active tab and language on mount
   useEffect(() => {
-    chrome.storage.sync.get(['activeTab'], (result) => {
+    chrome.storage.sync.get(['activeTab', 'defaultLanguage'], (result) => {
       if (result.activeTab) {
         setActiveTab(result.activeTab)
       }
+      if (result.defaultLanguage) {
+        setCurrentLanguage(result.defaultLanguage as SupportedLanguage)
+      }
     })
   }, [])
+
+  // Helper function to get translations
+  const t = (key: any) => getTranslation(key, currentLanguage)
 
   // Save active tab when it changes
   const handleTabChange = (tabId: string) => {
@@ -39,27 +48,42 @@ const Popup = () => {
     chrome.storage.sync.set({ activeTab: tabId })
   }
 
-  const handleClosePopup = () => {
-    window.close()
-  }
-
   const tabs = [
     {
       id: 'translate',
-      label: 'Translate',
+      label: t('translateTab'),
       content: <TranslateTab />
     },
     {
       id: 'tasks',
-      label: 'Tasks',
+      label: t('tasksTab'),
       content: <Tasks />
     },
     {
       id: 'pomo',
-      label: 'Pomo',
-      content: <PomoPlaceholder />
+      label: t('pomoTab'),
+      content: <PomodoroTimer />
     }
   ]
+
+  // Handle keyboard navigation
+  const handleKeyboardTabSwitch = (tabIndex: number) => {
+    const targetTab = tabs[tabIndex]
+    if (targetTab) {
+      handleTabChange(targetTab.id)
+    }
+  }
+
+  // Setup keyboard navigation
+  useKeyboardNavigation({
+    onTabSwitch: handleKeyboardTabSwitch,
+    tabIds: tabs.map(tab => tab.id),
+    isEnabled: true
+  })
+
+  const handleClosePopup = () => {
+    window.close()
+  }
 
   return (
     <PopupContainer
