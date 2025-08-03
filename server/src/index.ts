@@ -9,6 +9,7 @@ import translateRoutes from './routes/translateRoutes'
 import summarizeRoutes from './routes/summarizeRoutes'
 import saveRoutes from './routes/saveRoutes'
 import smoothRoutes from './routes/smoothRoutes'
+import taskRoutes from './routes/taskRoutes'
 dotenv.config()
 
 const app = express()
@@ -49,6 +50,7 @@ app.use('/translate', translateRoutes)
 app.use('/summarize', summarizeRoutes)
 app.use('/save', saveRoutes)
 app.use('/smooth', smoothRoutes)
+app.use('/tasks', taskRoutes)
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}/`)

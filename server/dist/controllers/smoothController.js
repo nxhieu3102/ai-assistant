@@ -1,6 +1,6 @@
-import TranslateService from 'src/services/translateService';
-class TranslateController {
-    translate = async (req, res) => {
+import SmoothService from 'src/services/smoothService';
+class SmoothController {
+    smooth = async (req, res) => {
         try {
             const payload = {
                 language: req.query.language,
@@ -8,10 +8,10 @@ class TranslateController {
                 needExplanation: req.query.needExplanation === 'true',
                 context: req.query.context,
             };
-            console.log('[translate request]', payload);
-            const translateService = new TranslateService();
-            const result = await translateService.translate(payload);
-            console.log('[translate response]', result);
+            console.log('[smooth request]', payload);
+            const service = new SmoothService();
+            const result = await service.smooth(payload);
+            console.log('[smooth response]', result);
             res.send(result);
         }
         catch (error) {
@@ -20,4 +20,4 @@ class TranslateController {
         }
     };
 }
-export default TranslateController;
+export default SmoothController;

@@ -5,7 +5,7 @@ import styled from 'styled-components'
 import { getTranslation, SupportedLanguage } from '../../services/i18n'
 
 interface TaskInputProps {
-  onAddTask: (taskText: string) => void
+  onAddTask: (taskText: string) => Promise<void>
   placeholder?: string
 }
 
@@ -96,6 +96,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({
   placeholder
 }) => {
   const [inputValue, setInputValue] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('English')
 
   // Load current language from storage
@@ -110,11 +111,19 @@ export const TaskInput: React.FC<TaskInputProps> = ({
   // Helper function to get translations
   const t = (key: any) => getTranslation(key, currentLanguage)
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     const trimmedValue = inputValue.trim()
-    if (trimmedValue) {
-      onAddTask(trimmedValue)
-      setInputValue('')
+    if (trimmedValue && !isLoading) {
+      setIsLoading(true)
+      try {
+        await onAddTask(trimmedValue)
+        setInputValue('')
+      } catch (error) {
+        // Error handling is done in the parent component
+        console.error('Error adding task:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -141,7 +150,8 @@ export const TaskInput: React.FC<TaskInputProps> = ({
         type="primary"
         icon={<PlusOutlined />}
         onClick={handleAddTask}
-        disabled={!inputValue.trim()}
+        disabled={!inputValue.trim() || isLoading}
+        loading={isLoading}
         title={`${t('addTask')} (Enter)`}
         aria-label={`${t('addTask')} (Enter)`}
         aria-describedby="task-input-help"

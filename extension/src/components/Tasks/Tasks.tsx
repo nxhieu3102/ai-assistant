@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion'
 import styled from 'styled-components'
 import { TaskInput } from './TaskInput'
 import { TaskItem, Task } from './TaskItem'
-import { loadTodaysTasks, saveTodaysTasks, getTaskStats, cleanupOldTasks } from '../../services/taskStorage'
+import { loadTodaysTasks, getTaskStats, createTask as apiCreateTask, updateTask as apiUpdateTask, deleteTask as apiDeleteTask, checkServerHealth } from '../../services/taskApi'
 import { getTranslation, SupportedLanguage } from '../../services/i18n'
 
 const { Title, Text } = Typography
@@ -94,7 +94,7 @@ const EmptyContainer = styled.div`
 export const Tasks: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [hasMigrated, setHasMigrated] = useState(false)
+  const [serverAvailable, setServerAvailable] = useState(true)
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('English')
 
   // Load current language from storage
@@ -109,14 +109,23 @@ export const Tasks: React.FC = () => {
   // Helper function to get translations
   const t = (key: any) => getTranslation(key, currentLanguage)
 
-  // Load tasks from storage on component mount with automatic migration
+  // Load tasks from server on component mount with automatic migration
   useEffect(() => {
     const loadTasks = async () => {
       try {
         setIsLoading(true)
+        
+        // Check server health first
+        const healthCheck = await checkServerHealth()
+        setServerAvailable(healthCheck)
+        
+        if (!healthCheck) {
+          message.error(`${t('error')}: Server is not available. Please ensure the server is running.`)
+          return
+        }
+        
         const loadedTasks = await loadTodaysTasks()
         setTasks(loadedTasks)
-        setHasMigrated(true)
         
         // Show migration message if we have tasks that might be from yesterday
         const hasTasksFromToday = loadedTasks.some(task => {
@@ -135,12 +144,10 @@ export const Tasks: React.FC = () => {
           message.info(t('tasksMigrated'))
         }
         
-        // Cleanup old tasks in the background
-        cleanupOldTasks(30).catch(console.error)
-        
       } catch (error) {
         console.error('Error loading tasks:', error)
-        message.error(`${t('error')}: Failed to load tasks`)
+        setServerAvailable(false)
+        message.error(`${t('error')}: Failed to load tasks - ${error instanceof Error ? error.message : 'Unknown error'}`)
       } finally {
         setIsLoading(false)
       }
@@ -149,38 +156,68 @@ export const Tasks: React.FC = () => {
     loadTasks()
   }, [])
 
-  // Save tasks to storage whenever tasks change (but not during initial load)
-  useEffect(() => {
-    if (!isLoading && hasMigrated) {
-      saveTodaysTasks(tasks).catch((error) => {
-        console.error('Error saving tasks:', error)
-        message.error(`${t('error')}: Failed to save tasks`)
-      })
-    }
-  }, [tasks, isLoading, hasMigrated])
+  // Tasks are automatically saved to the server via API calls, no auto-save needed
 
-  const addTask = (taskText: string) => {
-    const newTask: Task = {
-      id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      text: taskText,
-      completed: false,
-      createdAt: new Date().toISOString()
+  const addTask = async (taskText: string) => {
+    if (!serverAvailable) {
+      message.error(`${t('error')}: Server is not available`)
+      return
     }
-    setTasks(prevTasks => [newTask, ...prevTasks])
+    
+    try {
+      const newTask = await apiCreateTask(taskText)
+      setTasks(prevTasks => [newTask, ...prevTasks])
+    } catch (error) {
+      console.error('Error creating task:', error)
+      message.error(`${t('error')}: Failed to create task - ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
-  const toggleTask = (taskId: string) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId
-          ? { ...task, completed: !task.completed }
-          : task
+  const toggleTask = async (taskId: string) => {
+    if (!serverAvailable) {
+      message.error(`${t('error')}: Server is not available`)
+      return
+    }
+    
+    try {
+      // Find the current task to get its current state
+      const currentTask = tasks.find(task => task.id === taskId)
+      if (!currentTask) {
+        message.error(`${t('error')}: Task not found`)
+        return
+      }
+      
+      // Update task on server
+      const updatedTask = await apiUpdateTask(taskId, { completed: !currentTask.completed })
+      
+      // Update local state
+      setTasks(prevTasks =>
+        prevTasks.map(task =>
+          task.id === taskId ? updatedTask : task
+        )
       )
-    )
+    } catch (error) {
+      console.error('Error toggling task:', error)
+      message.error(`${t('error')}: Failed to update task - ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
-  const deleteTask = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId))
+  const deleteTask = async (taskId: string) => {
+    if (!serverAvailable) {
+      message.error(`${t('error')}: Server is not available`)
+      return
+    }
+    
+    try {
+      // Delete task on server
+      await apiDeleteTask(taskId)
+      
+      // Update local state
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId))
+    } catch (error) {
+      console.error('Error deleting task:', error)
+      message.error(`${t('error')}: Failed to delete task - ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   const { completed: completedCount, pending: pendingCount, total: totalTasks } = getTaskStats(tasks)
@@ -200,7 +237,7 @@ export const Tasks: React.FC = () => {
           style={{ margin: 0, color: '#1890ff' }}
           aria-live="polite"
         >
-          📋 {t('todaysTasks')}
+          📋 {t('todaysTasks')} {!serverAvailable && <span style={{ color: '#ff4d4f', fontSize: '12px' }}>({t('offline')})</span>}
         </Title>
         <TasksStats aria-label="Task statistics">
           <StatItem aria-label={`${completedCount} completed tasks`}>

@@ -41,7 +41,7 @@ export type TranslationKey =
   | 'completedToday' | 'averageDaily' | 'longestStreak' | 'thisWeek' | 'lastSevenDays'
   | 'noDataYet' | 'startFirstSession' | 'productivity' | 'trend'
   // General UI keys
-  | 'loading' | 'error' | 'save' | 'cancel' | 'close' | 'add' | 'delete' | 'edit'
+  | 'loading' | 'error' | 'save' | 'cancel' | 'close' | 'add' | 'delete' | 'edit' | 'offline'
 
 export type TranslationSet = {
   [key in TranslationKey]: string
@@ -143,7 +143,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: 'Close',
     add: 'Add',
     delete: 'Delete',
-    edit: 'Edit'
+    edit: 'Edit',
+    offline: 'Offline'
   },
   Vietnamese: {
     // Translate tab
@@ -235,7 +236,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: 'Đóng',
     add: 'Thêm',
     delete: 'Xóa',
-    edit: 'Chỉnh sửa'
+    edit: 'Chỉnh sửa',
+    offline: 'Ngoại tuyến'
   },
   Spanish: {
     // Translate tab
@@ -327,7 +329,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: 'Cerrar',
     add: 'Agregar',
     delete: 'Eliminar',
-    edit: 'Editar'
+    edit: 'Editar',
+    offline: 'Sin conexión'
   },
   French: {
     // Translate tab
@@ -419,7 +422,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: 'Fermer',
     add: 'Ajouter',
     delete: 'Supprimer',
-    edit: 'Modifier'
+    edit: 'Modifier',
+    offline: 'Hors ligne'
   },
   German: {
     // Translate tab
@@ -511,7 +515,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: 'Schließen',
     add: 'Hinzufügen',
     delete: 'Löschen',
-    edit: 'Bearbeiten'
+    edit: 'Bearbeiten',
+    offline: 'Offline'
   },
   Chinese: {
     // Translate tab
@@ -603,7 +608,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: '关闭',
     add: '添加',
     delete: '删除',
-    edit: '编辑'
+    edit: '编辑',
+    offline: '离线'
   },
   Japanese: {
     // Translate tab
@@ -695,7 +701,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: '閉じる',
     add: '追加',
     delete: '削除',
-    edit: '編集'
+    edit: '編集',
+    offline: 'オフライン'
   },
   Korean: {
     // Translate tab
@@ -787,7 +794,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: '닫기',
     add: '추가',
     delete: '삭제',
-    edit: '편집'
+    edit: '편집',
+    offline: '오프라인'
   },
   Russian: {
     // Translate tab
@@ -879,7 +887,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: 'Закрыть',
     add: 'Добавить',
     delete: 'Удалить',
-    edit: 'Редактировать'
+    edit: 'Редактировать',
+    offline: 'Офлайн'
   },
   Arabic: {
     // Translate tab
@@ -971,7 +980,8 @@ export const UI_TRANSLATIONS: Translations = {
     close: 'إغلاق',
     add: 'إضافة',
     delete: 'حذف',
-    edit: 'تحرير'
+    edit: 'تحرير',
+    offline: 'غير متصل'
   }
 }
 

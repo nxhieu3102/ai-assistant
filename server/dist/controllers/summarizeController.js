@@ -8,10 +8,10 @@ class SummarizeController {
                 needExplanation: req.query.needExplanation === 'true',
                 context: req.query.context,
             };
-            console.log("payload:", payload);
+            console.log('[summarize request]', payload);
             const service = new SummarizeService();
             const result = await service.summarize(payload);
-            console.log("result:", result);
+            console.log('[summarize response]', result);
             res.send(result);
         }
         catch (error) {

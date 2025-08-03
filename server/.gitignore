@@ -69,3 +69,6 @@ TEST-results.xml
 *v8.log
 /lib/
 .DS_Store
+
+# Task storage
+temp/

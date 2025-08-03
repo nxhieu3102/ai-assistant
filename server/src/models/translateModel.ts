@@ -15,3 +15,26 @@ export type ResponseData = {
   error: string
   content: string
 }
+
+export type Task = {
+  id: string
+  text: string
+  completed: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type TasksData = {
+  version: number
+  lastMigration: string
+  days: Record<string, Task[]>
+}
+
+export type CreateTaskRequest = {
+  text: string
+}
+
+export type UpdateTaskRequest = {
+  text?: string
+  completed?: boolean
+}

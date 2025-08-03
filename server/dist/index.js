@@ -7,6 +7,8 @@ import bodyParser from 'body-parser';
 import translateRoutes from './routes/translateRoutes';
 import summarizeRoutes from './routes/summarizeRoutes';
 import saveRoutes from './routes/saveRoutes';
+import smoothRoutes from './routes/smoothRoutes';
+import taskRoutes from './routes/taskRoutes';
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -36,6 +38,8 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 app.use('/translate', translateRoutes);
 app.use('/summarize', summarizeRoutes);
 app.use('/save', saveRoutes);
+app.use('/smooth', smoothRoutes);
+app.use('/tasks', taskRoutes);
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}/`);
 });
