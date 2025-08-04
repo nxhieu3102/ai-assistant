@@ -1,7 +1,10 @@
 import { Task } from '../components/Tasks/TaskItem'
 
 // Server API configuration
-const SERVER_BASE_URL = 'http://localhost:3000'
+const HOST = import.meta.env.VITE_HOST;
+const PORT = import.meta.env.VITE_PORT;
+const SERVER_BASE_URL = `${HOST}:${PORT}`;
+
 
 // Response type from server
 interface ApiResponse<T = any> {
@@ -184,6 +187,7 @@ export const getTaskStats = (tasks: Task[]) => {
  */
 export const checkServerHealth = async (): Promise<boolean> => {
   try {
+    console.log('Checking server health:', SERVER_BASE_URL)
     const response = await fetch(`${SERVER_BASE_URL}/tasks`, {
       method: 'GET',
       signal: AbortSignal.timeout(5000) // 5 second timeout
