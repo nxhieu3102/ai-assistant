@@ -5,3 +5,8 @@ services:
     build: ./server
     ports:
       - "3000:3000"
+    volumes:
+      - tasks_data:/usr/src/app/temp
+
+volumes:
+  tasks_data:
