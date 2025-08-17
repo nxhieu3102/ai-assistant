@@ -9,8 +9,6 @@ export interface BackgroundTimerState {
   timeRemaining: number
   startTime?: number
   pausedTime?: number
-  currentCycle: number
-  completedCycles: number
   sessionsToday: number
 }
 

@@ -28,8 +28,6 @@ export interface PomodoroTimerState {
   timeRemaining: number
   startTime?: number
   pausedTime?: number
-  currentCycle: number
-  completedCycles: number
   sessionsToday: number
   lastSessionDate?: string
 }

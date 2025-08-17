@@ -32,8 +32,6 @@ export interface UsePomodoroReturn {
   timerState: TimerState
   currentMode: TimerMode
   timeRemaining: number
-  currentCycle: number
-  completedCycles: number
   sessionsToday: number
   
   // Computed values
@@ -52,13 +50,6 @@ export interface UsePomodoroReturn {
   formatTime: (seconds: number) => string
   getTimeDisplay: () => string
   getModeLabel: (mode?: TimerMode) => string
-  
-  // Cycle information
-  getCycleInfo: () => {
-    current: number
-    total: number
-    isLongBreakNext: boolean
-  }
 }
 
 /**
@@ -78,8 +69,6 @@ export const usePomodoro = (options: UsePomodoroOptions = {}): UsePomodoroReturn
   const [timerState, setTimerState] = useState<TimerState>('idle')
   const [currentMode, setCurrentMode] = useState<TimerMode>('focus')
   const [timeRemaining, setTimeRemaining] = useState(TIMER_DURATIONS.focus)
-  const [currentCycle, setCurrentCycle] = useState(1)
-  const [completedCycles, setCompletedCycles] = useState(0)
   const [sessionsToday, setSessionsToday] = useState(0)
   const [settings, setSettings] = useState<PomodoroSettings>(DEFAULT_POMODORO_SETTINGS)
 
@@ -118,8 +107,6 @@ export const usePomodoro = (options: UsePomodoroOptions = {}): UsePomodoroReturn
     setTimerState(bgState.state)
     setCurrentMode(bgState.mode)
     setTimeRemaining(bgState.timeRemaining)
-    setCurrentCycle(bgState.currentCycle)
-    setCompletedCycles(bgState.completedCycles)
     setSessionsToday(bgState.sessionsToday)
 
     // Trigger callbacks for mode/state changes
@@ -228,15 +215,7 @@ export const usePomodoro = (options: UsePomodoroOptions = {}): UsePomodoroReturn
   const isPaused = timerState === 'paused'
   const isIdle = timerState === 'idle'
 
-  // Get cycle information
-  const getCycleInfo = useCallback(() => {
-    const cyclePosition = completedCycles % 4
-    return {
-      current: cyclePosition + 1,
-      total: 4,
-      isLongBreakNext: cyclePosition === 3
-    }
-  }, [completedCycles])
+
 
   // Control functions - delegate to background timer
   const start = useCallback(async () => {
@@ -324,8 +303,6 @@ export const usePomodoro = (options: UsePomodoroOptions = {}): UsePomodoroReturn
     timerState,
     currentMode,
     timeRemaining,
-    currentCycle,
-    completedCycles,
     sessionsToday,
     
     // Computed
@@ -343,7 +320,6 @@ export const usePomodoro = (options: UsePomodoroOptions = {}): UsePomodoroReturn
     // Utils
     formatTime,
     getTimeDisplay,
-    getModeLabel,
-    getCycleInfo
+    getModeLabel
   }
 }

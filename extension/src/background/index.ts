@@ -15,8 +15,6 @@ interface PomodoroTimerState {
   timeRemaining: number
   startTime?: number
   pausedTime?: number
-  currentCycle: number
-  completedCycles: number
   sessionsToday: number
 }
 
@@ -75,8 +73,6 @@ let timerState: PomodoroTimerState = {
   state: 'idle',
   mode: 'focus',
   timeRemaining: DEFAULT_TIMER_DURATIONS.focus,
-  currentCycle: 1,
-  completedCycles: 0,
   sessionsToday: 0
 }
 
@@ -359,18 +355,12 @@ async function handleTimerComplete(): Promise<void> {
   // Update session tracking
   timerState.sessionsToday += 1
   
-  // Determine next mode
+  // Simple mode alternation: focus -> shortBreak -> focus -> shortBreak...
   let nextMode: TimerMode
   if (timerState.mode === 'focus') {
-    timerState.completedCycles += 1
-    // Use settings for long break interval
-    nextMode = timerState.completedCycles % currentSettings.longBreakInterval === 0 ? 'longBreak' : 'shortBreak'
+    nextMode = 'shortBreak'
   } else {
-    // After break, return to focus
     nextMode = 'focus'
-    if (timerState.mode === 'longBreak') {
-      timerState.currentCycle += 1
-    }
   }
   
   // Transition to next mode

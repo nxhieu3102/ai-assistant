@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Typography, Button, Progress, Tag, Space, Divider, Tabs, message } from 'antd'
+import { Typography, Button, Tag, Space, Tabs, message } from 'antd'
 import { 
   PlayCircleOutlined, 
   PauseCircleOutlined,
@@ -11,7 +11,7 @@ import {
   ClockCircleTwoTone,
   BarChartOutlined
 } from '@ant-design/icons'
-import { motion } from 'framer-motion'
+
 import styled from 'styled-components'
 import { getTranslation, SupportedLanguage } from '../services/i18n'
 import { usePomodoro, TimerMode, PomodoroSession } from '../hooks/usePomodoro'
@@ -39,18 +39,17 @@ const TimerDisplay = styled.div<{ mode: TimerMode }>`
       case 'longBreak': return 'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'
     }
   }};
-  border-radius: 50%;
-  width: 180px;
-  height: 180px;
+  border-radius: 16px;
+  width: 300px;
+  height: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   margin: 20px auto;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  border: 4px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
-  position: relative;
 
   &:focus {
     outline: 3px solid #1890ff;
@@ -59,22 +58,22 @@ const TimerDisplay = styled.div<{ mode: TimerMode }>`
 
   /* High contrast mode support */
   @media (prefers-contrast: high) {
-    border: 4px solid currentColor;
+    border: 2px solid currentColor;
     background: ${props => props.mode === 'focus' ? 'Canvas' : 'Mark'};
     color: ${props => props.mode === 'focus' ? 'CanvasText' : 'MarkText'};
   }
 `
 
 const TimeText = styled.div`
-  font-size: 36px;
+  font-size: 48px;
   font-weight: bold;
   line-height: 1;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 `
 
 const ModeText = styled.div`
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -85,7 +84,9 @@ const ControlsContainer = styled.div`
   display: flex;
   gap: 12px;
   align-items: center;
+  justify-content: center;
   margin: 24px 0;
+  width: 100%;
 `
 
 const ControlButton = styled(Button)<{ variant?: 'primary' | 'secondary' }>`
@@ -157,28 +158,7 @@ const SessionInfo = styled.div`
   margin-top: 20px;
 `
 
-const CycleIndicator = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 16px;
-`
 
-const CycleDot = styled.div<{ active: boolean; completed: boolean }>`
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: ${props => 
-    props.completed ? '#52c41a' : 
-    props.active ? '#ff6b6b' : '#d9d9d9'
-  };
-  transition: all 0.2s ease;
-  
-  /* Reduced motion support */
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-  }
-`
 
 export const PomodoroTimer: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('English')
@@ -235,8 +215,6 @@ export const PomodoroTimer: React.FC = () => {
     timerState,
     currentMode,
     timeRemaining,
-    currentCycle,
-    completedCycles,
     sessionsToday,
     progress,
     isRunning,
@@ -246,8 +224,7 @@ export const PomodoroTimer: React.FC = () => {
     pause,
     reset,
     skip,
-    getTimeDisplay,
-    getCycleInfo
+    getTimeDisplay
   } = usePomodoro({
     onSessionComplete: handleSessionComplete,
     onModeChange: handleModeChange,
@@ -263,32 +240,7 @@ export const PomodoroTimer: React.FC = () => {
     }
   }
 
-  // Render cycle indicator dots
-  const renderCycleIndicator = () => {
-    const dots = []
-    const cycleInfo = getCycleInfo()
-    
-    // Calculate position in the current 4-session Pomodoro cycle
-    const cyclePosition = completedCycles % 4
-    
-    for (let i = 0; i < 4; i++) {
-      const sessionNumber = i + 1
-      // A session is completed if we've completed more than this session number in current cycle
-      const isCompleted = i < cyclePosition
-      // A session is active if we're currently on this session and in focus mode
-      const isActive = i === cyclePosition && currentMode === 'focus'
-      
-      dots.push(
-        <CycleDot 
-          key={i}
-          active={isActive}
-          completed={isCompleted}
-          aria-label={`Focus session ${sessionNumber}: ${isCompleted ? 'completed' : isActive ? 'active' : 'pending'}`}
-        />
-      )
-    }
-    return dots
-  }
+
 
   // Handle tab changes
   const handleTabChange = (key: string) => {
@@ -308,11 +260,6 @@ export const PomodoroTimer: React.FC = () => {
   // Timer tab content
   const renderTimerTab = () => (
     <div role="main" aria-labelledby="timer-heading">
-      {/* Cycle Indicator */}
-      <CycleIndicator role="group" aria-label="Pomodoro cycle progress">
-        {renderCycleIndicator()}
-      </CycleIndicator>
-
       {/* Timer Display */}
       <TimerDisplay 
         mode={currentMode}
@@ -329,23 +276,7 @@ export const PomodoroTimer: React.FC = () => {
         </ModeText>
       </TimerDisplay>
 
-      {/* Progress Ring */}
-      <Progress 
-        type="circle" 
-        percent={progress} 
-        width={200}
-        strokeColor={currentMode === 'focus' ? '#ff6b6b' : currentMode === 'shortBreak' ? '#4caf50' : '#2196f3'}
-        trailColor="#f0f0f0"
-        showInfo={false}
-        style={{ 
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          pointerEvents: 'none'
-        }}
-        aria-hidden="true"
-      />
+
 
       {/* Control Buttons */}
       <ControlsContainer role="group" aria-label="Timer controls">
@@ -404,7 +335,7 @@ export const PomodoroTimer: React.FC = () => {
           </Space>
           
           <Text style={{ textAlign: 'center', fontSize: '14px', color: '#666' }}>
-            Pomodoro Cycle {Math.floor(completedCycles / 4) + 1} • Focus Sessions: {completedCycles % 4}/4 • Completed Today: {completedCycles}
+            Focus Sessions • Completed Today: {sessionsToday}
           </Text>
 
           {/* Settings Button */}
