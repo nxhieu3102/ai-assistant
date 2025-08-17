@@ -38,3 +38,13 @@ export type UpdateTaskRequest = {
   text?: string
   completed?: boolean
 }
+
+export type IncompleteTask = Task & {
+  originalDate: string
+}
+
+export type TaskCountsByDate = Record<string, {
+  total: number
+  completed: number
+  incomplete: number
+}>

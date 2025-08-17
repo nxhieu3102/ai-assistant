@@ -198,3 +198,71 @@ export const checkServerHealth = async (): Promise<boolean> => {
     return false
   }
 }
+
+// New types for calendar and incomplete tasks
+export interface IncompleteTask extends Task {
+  originalDate: string
+}
+
+export interface TaskCountsByDate {
+  [date: string]: {
+    total: number
+    completed: number
+    incomplete: number
+  }
+}
+
+/**
+ * Get task counts by date for calendar display
+ */
+export const getTaskCountsByDate = async (): Promise<TaskCountsByDate> => {
+  try {
+    const response = await fetch(`${SERVER_BASE_URL}/tasks/calendar`)
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const apiResponse: ApiResponse = await response.json()
+    return parseResponse<TaskCountsByDate>(apiResponse)
+  } catch (error) {
+    console.error('Error fetching task counts by date:', error)
+    throw new Error(`Failed to fetch task counts: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+/**
+ * Get all incomplete tasks from previous dates
+ */
+export const getIncompleteTasks = async (): Promise<IncompleteTask[]> => {
+  try {
+    const response = await fetch(`${SERVER_BASE_URL}/tasks/incomplete`)
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const apiResponse: ApiResponse = await response.json()
+    return parseResponse<IncompleteTask[]>(apiResponse)
+  } catch (error) {
+    console.error('Error fetching incomplete tasks:', error)
+    throw new Error(`Failed to fetch incomplete tasks: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
+}
+
+/**
+ * Update an incomplete task (needs originalDate for proper API call)
+ */
+export const updateIncompleteTask = async (
+  task: IncompleteTask,
+  updates: { text?: string; completed?: boolean }
+): Promise<Task> => {
+  return updateTask(task.id, updates, task.originalDate)
+}
+
+/**
+ * Delete an incomplete task (needs originalDate for proper API call)
+ */
+export const deleteIncompleteTask = async (task: IncompleteTask): Promise<Task> => {
+  return deleteTask(task.id, task.originalDate)
+}

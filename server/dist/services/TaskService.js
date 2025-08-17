@@ -68,6 +68,15 @@ class TaskService {
         try {
             this.validateTaskText(request.text);
             const targetDate = date || this.getTodayString();
+            const today = this.getTodayString();
+            // Validate that we can't create tasks for past dates
+            if (targetDate < today) {
+                return {
+                    status: 'error',
+                    error: 'Cannot create tasks for past dates',
+                    content: ''
+                };
+            }
             const now = new Date().toISOString();
             const newTask = {
                 id: this.generateId(),
@@ -164,52 +173,76 @@ class TaskService {
         }
     }
     async migrateUnfinishedTasks() {
+        // Migration is disabled - tasks now stay in their original dates
+        // This endpoint is kept for backward compatibility
+        return {
+            status: 'success',
+            error: '',
+            content: 'Migration disabled - tasks remain in their original dates'
+        };
+    }
+    async getTaskCountsByDate() {
         try {
-            const today = this.getTodayString();
-            const lastMigration = await this.taskRepo.getLastMigration();
-            const lastMigrationDate = lastMigration.split('T')[0];
-            // Skip if already migrated today
-            if (lastMigrationDate === today) {
-                return {
-                    status: 'success',
-                    error: '',
-                    content: 'Migration already completed today'
-                };
-            }
             const allDays = await this.taskRepo.getAllDays();
-            const todayTasks = allDays[today] || [];
-            let migratedCount = 0;
-            // Get yesterday's date
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayString = yesterday.toISOString().split('T')[0];
-            // Migrate unfinished tasks from yesterday
-            if (allDays[yesterdayString]) {
-                const unfinishedTasks = allDays[yesterdayString].filter(task => !task.completed);
-                // Update timestamps for migrated tasks
-                unfinishedTasks.forEach(task => {
-                    task.updatedAt = new Date().toISOString();
-                });
-                todayTasks.unshift(...unfinishedTasks);
-                migratedCount = unfinishedTasks.length;
-            }
-            // Save updated today's tasks
-            await this.taskRepo.saveTasksForDate(today, todayTasks);
-            // Clean up old data (older than 30 days)
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - 30);
-            const cutoffString = cutoffDate.toISOString().split('T')[0];
-            await this.taskRepo.deleteDaysBefore(cutoffString);
-            // Update migration timestamp
-            await this.taskRepo.setLastMigration(new Date().toISOString());
+            const taskCounts = {};
+            Object.keys(allDays).forEach(date => {
+                const tasks = allDays[date];
+                const completed = tasks.filter(task => task.completed).length;
+                const incomplete = tasks.filter(task => !task.completed).length;
+                taskCounts[date] = {
+                    total: tasks.length,
+                    completed,
+                    incomplete
+                };
+            });
             return {
                 status: 'success',
                 error: '',
-                content: `Migrated ${migratedCount} unfinished tasks to today`
+                content: JSON.stringify(taskCounts)
             };
         }
         catch (error) {
-            console.error('Error during migration:', error);
+            console.error('Error getting task counts by date:', error);
+            return {
+                status: 'error',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                content: ''
+            };
+        }
+    }
+    async getIncompleteTasks() {
+        try {
+            const today = this.getTodayString();
+            const allDays = await this.taskRepo.getAllDays();
+            const incompleteTasks = [];
+            // Get all incomplete tasks from dates before today
+            Object.keys(allDays).forEach(date => {
+                if (date < today) {
+                    const dayTasks = allDays[date];
+                    const dayIncompleteTasks = dayTasks
+                        .filter(task => !task.completed)
+                        .map(task => ({
+                        ...task,
+                        originalDate: date
+                    }));
+                    incompleteTasks.push(...dayIncompleteTasks);
+                }
+            });
+            // Sort by original date (newest first) and then by creation time
+            incompleteTasks.sort((a, b) => {
+                if (a.originalDate !== b.originalDate) {
+                    return b.originalDate.localeCompare(a.originalDate);
+                }
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+            return {
+                status: 'success',
+                error: '',
+                content: JSON.stringify(incompleteTasks)
+            };
+        }
+        catch (error) {
+            console.error('Error getting incomplete tasks:', error);
             return {
                 status: 'error',
                 error: error instanceof Error ? error.message : 'Unknown error',

@@ -19,4 +19,10 @@ router.delete('/:id', controller.deleteTask)
 // POST /tasks/migrate - Manual migration trigger (for debugging/admin)
 router.post('/migrate', controller.migrateTasks)
 
+// GET /tasks/calendar - Get task counts by date for calendar
+router.get('/calendar', controller.getTaskCountsByDate)
+
+// GET /tasks/incomplete - Get all incomplete tasks from previous dates
+router.get('/incomplete', controller.getIncompleteTasks)
+
 export default router

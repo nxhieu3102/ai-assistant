@@ -7,8 +7,6 @@ class TaskController {
     getTasks = async (req, res) => {
         try {
             const date = req.query.date;
-            // Trigger migration on first request of the day
-            await this.taskService.migrateUnfinishedTasks();
             const result = await this.taskService.getTasksForDate(date);
             res.json(result);
         }
@@ -82,6 +80,34 @@ class TaskController {
         }
         catch (error) {
             console.error('Error in migrateTasks:', error);
+            res.status(500).json({
+                status: 'error',
+                error: 'Internal server error',
+                content: ''
+            });
+        }
+    };
+    getTaskCountsByDate = async (req, res) => {
+        try {
+            const result = await this.taskService.getTaskCountsByDate();
+            res.json(result);
+        }
+        catch (error) {
+            console.error('Error in getTaskCountsByDate:', error);
+            res.status(500).json({
+                status: 'error',
+                error: 'Internal server error',
+                content: ''
+            });
+        }
+    };
+    getIncompleteTasks = async (req, res) => {
+        try {
+            const result = await this.taskService.getIncompleteTasks();
+            res.json(result);
+        }
+        catch (error) {
+            console.error('Error in getIncompleteTasks:', error);
             res.status(500).json({
                 status: 'error',
                 error: 'Internal server error',

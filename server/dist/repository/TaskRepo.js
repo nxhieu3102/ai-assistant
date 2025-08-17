@@ -1,151 +1,195 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import lockfile from 'proper-lockfile';
+import { neboa } from 'neboa';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 class TaskRepo {
-    filePath;
-    lockPath;
-    backupDir;
-    maxBackups = 10;
+    db;
+    tasksCollection;
+    metadataCollection;
     constructor() {
-        // Use relative path from repository directory to temp folder
-        this.filePath = path.join(__dirname, '../../temp/tasks.json');
-        this.lockPath = `${this.filePath}.lock`;
-        this.backupDir = path.join(__dirname, '../../temp/backups');
-        // Ensure temp and backup directories exist
-        this.ensureDirectories();
+        // Use relative path from repository directory to database file
+        const dbPath = path.join(__dirname, '../../temp/tasks.db');
+        this.db = neboa(dbPath);
+        // Initialize collections
+        this.tasksCollection = this.db.collection('tasks');
+        this.metadataCollection = this.db.collection('metadata');
+        // Initialize default metadata if not exists
+        this.initializeMetadata();
     }
-    ensureDirectories() {
-        const tempDir = path.dirname(this.filePath);
-        if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir, { recursive: true });
-        }
-        if (!fs.existsSync(this.backupDir)) {
-            fs.mkdirSync(this.backupDir, { recursive: true });
-        }
-    }
-    createBackup() {
-        if (!fs.existsSync(this.filePath))
-            return;
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const backupPath = path.join(this.backupDir, `tasks.backup.${timestamp}.json`);
+    initializeMetadata() {
         try {
-            fs.copyFileSync(this.filePath, backupPath);
-            this.cleanupOldBackups();
-        }
-        catch (error) {
-            console.error('Failed to create backup:', error);
-        }
-    }
-    cleanupOldBackups() {
-        try {
-            const files = fs.readdirSync(this.backupDir)
-                .filter(file => file.startsWith('tasks.backup.') && file.endsWith('.json'))
-                .map(file => ({
-                name: file,
-                path: path.join(this.backupDir, file),
-                stats: fs.statSync(path.join(this.backupDir, file))
-            }))
-                .sort((a, b) => b.stats.mtime.getTime() - a.stats.mtime.getTime());
-            // Keep only the latest maxBackups files
-            if (files.length > this.maxBackups) {
-                files.slice(this.maxBackups).forEach(file => {
-                    fs.unlinkSync(file.path);
+            // Check if lastMigration exists, if not create it
+            const lastMigrationDoc = this.metadataCollection.query()
+                .equalTo('key', 'lastMigration')
+                .limit(1)
+                .find();
+            if (lastMigrationDoc.length === 0) {
+                this.metadataCollection.insert({
+                    key: 'lastMigration',
+                    value: new Date().toISOString()
+                });
+            }
+            // Check if version exists, if not create it
+            const versionDoc = this.metadataCollection.query()
+                .equalTo('key', 'version')
+                .limit(1)
+                .find();
+            if (versionDoc.length === 0) {
+                this.metadataCollection.insert({
+                    key: 'version',
+                    value: '1'
                 });
             }
         }
         catch (error) {
-            console.error('Failed to cleanup old backups:', error);
-        }
-    }
-    getDefaultData() {
-        return {
-            version: 1,
-            lastMigration: new Date().toISOString(),
-            days: {}
-        };
-    }
-    async read() {
-        try {
-            // If file doesn't exist, create it with default data (without locking)
-            if (!fs.existsSync(this.filePath)) {
-                const defaultData = this.getDefaultData();
-                const jsonData = JSON.stringify(defaultData, null, 2);
-                fs.writeFileSync(this.filePath, jsonData, 'utf-8');
-                return defaultData;
-            }
-            const release = await lockfile.lock(this.filePath, { retries: { retries: 3, minTimeout: 100 } });
-            try {
-                const fileContent = fs.readFileSync(this.filePath, 'utf-8');
-                const data = JSON.parse(fileContent);
-                return data;
-            }
-            finally {
-                release();
-            }
-        }
-        catch (error) {
-            throw new Error(`Failed to read tasks file: ${error}`);
-        }
-    }
-    async write(data) {
-        try {
-            // Ensure the file exists before attempting to lock it
-            if (!fs.existsSync(this.filePath)) {
-                // Create an empty file to lock
-                fs.writeFileSync(this.filePath, '{}', 'utf-8');
-            }
-            const release = await lockfile.lock(this.filePath, { retries: { retries: 3, minTimeout: 100 } });
-            try {
-                // Create backup before writing
-                this.createBackup();
-                // Atomic write: write to temp file, then rename
-                const tempPath = `${this.filePath}.tmp`;
-                const jsonData = JSON.stringify(data, null, 2);
-                fs.writeFileSync(tempPath, jsonData, 'utf-8');
-                fs.renameSync(tempPath, this.filePath);
-            }
-            finally {
-                release();
-            }
-        }
-        catch (error) {
-            throw new Error(`Failed to write tasks file: ${error}`);
+            console.error('Failed to initialize metadata:', error);
         }
     }
     async getTasksForDate(date) {
-        const data = await this.read();
-        return data.days[date] || [];
+        try {
+            const taskDocs = this.tasksCollection.query()
+                .equalTo('date', date)
+                .find();
+            // Convert TaskDocument[] to Task[] by removing the date field and deduplicating by task.id
+            const taskMap = new Map();
+            taskDocs.forEach((doc) => {
+                const task = {
+                    id: doc.id,
+                    text: doc.text,
+                    completed: doc.completed,
+                    createdAt: doc.createdAt,
+                    updatedAt: doc.updatedAt
+                };
+                // Use the most recent version if there are duplicates
+                if (!taskMap.has(task.id) || new Date(task.updatedAt) > new Date(taskMap.get(task.id).updatedAt)) {
+                    taskMap.set(task.id, task);
+                }
+            });
+            return Array.from(taskMap.values());
+        }
+        catch (error) {
+            console.error('Failed to get tasks for date:', error);
+            return [];
+        }
     }
     async saveTasksForDate(date, tasks) {
-        const data = await this.read();
-        data.days[date] = tasks;
-        data.lastMigration = new Date().toISOString();
-        await this.write(data);
+        try {
+            // First, delete all existing tasks for this date using the document's internal ID
+            const existingTasks = this.tasksCollection.query()
+                .equalTo('date', date)
+                .find();
+            existingTasks.forEach((taskDoc) => {
+                // Use the document's internal ID (_id) for deletion, not our custom task.id
+                this.tasksCollection.delete(taskDoc._id);
+            });
+            // Insert all new tasks with the date field
+            tasks.forEach((task) => {
+                const taskDoc = {
+                    ...task,
+                    date: date
+                };
+                this.tasksCollection.insert(taskDoc);
+            });
+            // Update last migration timestamp
+            await this.setLastMigration(new Date().toISOString());
+        }
+        catch (error) {
+            throw new Error(`Failed to save tasks for date: ${error}`);
+        }
     }
     async getAllDays() {
-        const data = await this.read();
-        return data.days;
+        try {
+            const allTasks = this.tasksCollection.query().find();
+            const dayMap = {};
+            allTasks.forEach((taskDoc) => {
+                if (!dayMap[taskDoc.date]) {
+                    dayMap[taskDoc.date] = new Map();
+                }
+                // Convert TaskDocument to Task by removing the date field
+                const task = {
+                    id: taskDoc.id,
+                    text: taskDoc.text,
+                    completed: taskDoc.completed,
+                    createdAt: taskDoc.createdAt,
+                    updatedAt: taskDoc.updatedAt
+                };
+                // Deduplicate by task.id, keeping the most recent version
+                const existingTask = dayMap[taskDoc.date].get(task.id);
+                if (!existingTask || new Date(task.updatedAt) > new Date(existingTask.updatedAt)) {
+                    dayMap[taskDoc.date].set(task.id, task);
+                }
+            });
+            // Convert Maps back to arrays
+            const result = {};
+            Object.keys(dayMap).forEach(date => {
+                result[date] = Array.from(dayMap[date].values());
+            });
+            return result;
+        }
+        catch (error) {
+            console.error('Failed to get all days:', error);
+            return {};
+        }
     }
     async deleteDaysBefore(cutoffDate) {
-        const data = await this.read();
-        Object.keys(data.days).forEach(date => {
-            if (date < cutoffDate) {
-                delete data.days[date];
-            }
-        });
-        await this.write(data);
+        try {
+            const allTasks = this.tasksCollection.query().find();
+            allTasks.forEach((taskDoc) => {
+                if (taskDoc.date < cutoffDate) {
+                    // Use the document's internal ID (_id) for deletion
+                    this.tasksCollection.delete(taskDoc._id);
+                }
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to delete days before cutoff: ${error}`);
+        }
     }
     async getLastMigration() {
-        const data = await this.read();
-        return data.lastMigration;
+        try {
+            const docs = this.metadataCollection.query()
+                .equalTo('key', 'lastMigration')
+                .limit(1)
+                .find();
+            if (docs.length > 0) {
+                return docs[0].value;
+            }
+            // Return default if not found
+            const defaultTimestamp = new Date().toISOString();
+            await this.setLastMigration(defaultTimestamp);
+            return defaultTimestamp;
+        }
+        catch (error) {
+            console.error('Failed to get last migration:', error);
+            return new Date().toISOString();
+        }
     }
     async setLastMigration(timestamp) {
-        const data = await this.read();
-        data.lastMigration = timestamp;
-        await this.write(data);
+        try {
+            // Find existing lastMigration document
+            const existingDocs = this.metadataCollection.query()
+                .equalTo('key', 'lastMigration')
+                .find();
+            if (existingDocs.length > 0) {
+                // Delete existing document and create new one (simpler approach)
+                this.metadataCollection.delete(existingDocs[0]._id);
+                this.metadataCollection.insert({
+                    key: 'lastMigration',
+                    value: timestamp
+                });
+            }
+            else {
+                // Create new document
+                this.metadataCollection.insert({
+                    key: 'lastMigration',
+                    value: timestamp
+                });
+            }
+        }
+        catch (error) {
+            throw new Error(`Failed to set last migration: ${error}`);
+        }
     }
 }
 export default TaskRepo;

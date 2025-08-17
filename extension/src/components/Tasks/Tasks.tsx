@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { Typography, Empty, Divider, message } from 'antd'
-import { CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons'
+import { Typography, Empty, Divider, message, Collapse } from 'antd'
+import { CheckCircleOutlined, ClockCircleOutlined, CalendarOutlined } from '@ant-design/icons'
 import { AnimatePresence } from 'framer-motion'
 import styled from 'styled-components'
 import { TaskInput } from './TaskInput'
 import { TaskItem, Task } from './TaskItem'
-import { loadTodaysTasks, getTaskStats, createTask as apiCreateTask, updateTask as apiUpdateTask, deleteTask as apiDeleteTask, checkServerHealth } from '../../services/taskApi'
+import { IncompleteTasksSection } from './IncompleteTasksSection'
+import { Calendar } from './Calendar'
+import { 
+  loadTodaysTasks, 
+  getTaskStats, 
+  createTask as apiCreateTask, 
+  updateTask as apiUpdateTask, 
+  deleteTask as apiDeleteTask, 
+  checkServerHealth,
+  getTasksForDate,
+  getDateString
+} from '../../services/taskApi'
 import { getTranslation, SupportedLanguage } from '../../services/i18n'
 
 const { Title, Text } = Typography
@@ -15,15 +26,27 @@ const TasksContainer = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
+  gap: 16px;
 `
 
-const TasksHeader = styled.div`
+const TasksSection = styled.div`
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+`
+
+const SectionHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  padding: 16px;
   border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+  border-radius: 8px 8px 0 0;
+`
+
+const SectionContent = styled.div`
+  padding: 16px;
 `
 
 const TasksStats = styled.div`
@@ -96,6 +119,9 @@ export const Tasks: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [serverAvailable, setServerAvailable] = useState(true)
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>('English')
+  const [selectedDate, setSelectedDate] = useState<string>(getDateString())
+  const [viewingToday, setViewingToday] = useState(true)
+  const [isCalendarCollapsed, setIsCalendarCollapsed] = useState(true)
 
   // Load current language from storage
   useEffect(() => {
@@ -109,52 +135,50 @@ export const Tasks: React.FC = () => {
   // Helper function to get translations
   const t = (key: any) => getTranslation(key, currentLanguage)
 
-  // Load tasks from server on component mount with automatic migration
-  useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Check server health first
-        const healthCheck = await checkServerHealth()
-        setServerAvailable(healthCheck)
-        
-        if (!healthCheck) {
-          message.error(`${t('error')}: Server is not available. Please ensure the server is running.`)
-          return
-        }
-        
-        const loadedTasks = await loadTodaysTasks()
-        setTasks(loadedTasks)
-        
-        // Show migration message if we have tasks that might be from yesterday
-        const hasTasksFromToday = loadedTasks.some(task => {
-          const taskDate = new Date(task.createdAt).toDateString()
-          const today = new Date().toDateString()
-          return taskDate === today
-        })
-        
-        const hasOlderTasks = loadedTasks.some(task => {
-          const taskDate = new Date(task.createdAt).toDateString()
-          const today = new Date().toDateString()
-          return taskDate !== today
-        })
-        
-        if (hasOlderTasks && !hasTasksFromToday) {
-          message.info(t('tasksMigrated'))
-        }
-        
-      } catch (error) {
-        console.error('Error loading tasks:', error)
-        setServerAvailable(false)
-        message.error(`${t('error')}: Failed to load tasks - ${error instanceof Error ? error.message : 'Unknown error'}`)
-      } finally {
-        setIsLoading(false)
+  // Load tasks for the selected date
+  const loadTasksForDate = async (date: string) => {
+    try {
+      setIsLoading(true)
+      
+      // Check server health first
+      const healthCheck = await checkServerHealth()
+      setServerAvailable(healthCheck)
+      
+      if (!healthCheck) {
+        message.error(`${t('error')}: Server is not available. Please ensure the server is running.`)
+        return
       }
+      
+      const loadedTasks = date === getDateString() 
+        ? await loadTodaysTasks()  // Use existing function for today
+        : await getTasksForDate(date) // Use new function for other dates
+      
+      setTasks(loadedTasks)
+      
+    } catch (error) {
+      console.error('Error loading tasks:', error)
+      setServerAvailable(false)
+      message.error(`${t('error')}: Failed to load tasks - ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsLoading(false)
     }
-    
-    loadTasks()
-  }, [])
+  }
+
+  // Load tasks when component mounts or selected date changes
+  useEffect(() => {
+    loadTasksForDate(selectedDate)
+  }, [selectedDate, viewingToday])
+
+  // Handle date selection from calendar
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date)
+    setViewingToday(date === getDateString())
+  }
+
+  // Handle task updates from various sections
+  const handleTaskUpdate = () => {
+    loadTasksForDate(selectedDate)
+  }
 
   // Tasks are automatically saved to the server via API calls, no auto-save needed
 
@@ -165,11 +189,13 @@ export const Tasks: React.FC = () => {
     }
     
     try {
-      const newTask = await apiCreateTask(taskText)
+      const newTask = await apiCreateTask(taskText, selectedDate)
+      // Always update local state since we're creating a task for the currently viewed date
       setTasks(prevTasks => [newTask, ...prevTasks])
+      message.success(t('taskCreated'))
     } catch (error) {
       console.error('Error creating task:', error)
-      message.error(`${t('error')}: Failed to create task - ${error instanceof Error ? error.message : 'Unknown error'}`)
+      message.error(`${t('error')}: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -188,7 +214,7 @@ export const Tasks: React.FC = () => {
       }
       
       // Update task on server
-      const updatedTask = await apiUpdateTask(taskId, { completed: !currentTask.completed })
+      const updatedTask = await apiUpdateTask(taskId, { completed: !currentTask.completed }, selectedDate)
       
       // Update local state
       setTasks(prevTasks =>
@@ -210,10 +236,11 @@ export const Tasks: React.FC = () => {
     
     try {
       // Delete task on server
-      await apiDeleteTask(taskId)
+      await apiDeleteTask(taskId, selectedDate)
       
       // Update local state
       setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId))
+      message.success(t('taskDeleted'))
     } catch (error) {
       console.error('Error deleting task:', error)
       message.error(`${t('error')}: Failed to delete task - ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -230,78 +257,116 @@ export const Tasks: React.FC = () => {
 
   return (
     <TasksContainer role="main" aria-labelledby="tasks-heading">
-      <TasksHeader>
-        <Title 
-          id="tasks-heading" 
-          level={4} 
-          style={{ margin: 0, color: '#1890ff' }}
-          aria-live="polite"
-        >
-          📋 {t('todaysTasks')} {!serverAvailable && <span style={{ color: '#ff4d4f', fontSize: '12px' }}>({t('offline')})</span>}
-        </Title>
-        <TasksStats aria-label="Task statistics">
-          <StatItem aria-label={`${completedCount} completed tasks`}>
-            <CheckCircleOutlined style={{ color: '#52c41a' }} aria-hidden="true" />
-            <Text>{completedCount}</Text>
-          </StatItem>
-          <StatItem aria-label={`${pendingCount} pending tasks`}>
-            <ClockCircleOutlined style={{ color: '#faad14' }} aria-hidden="true" />
-            <Text>{pendingCount}</Text>
-          </StatItem>
-        </TasksStats>
-      </TasksHeader>
+      {/* Today's Tasks Section */}
+      <TasksSection>
+        <SectionHeader>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Title 
+              id="tasks-heading" 
+              level={4} 
+              style={{ margin: 0, color: '#1890ff' }}
+              aria-live="polite"
+            >
+              📋 {viewingToday ? t('todaysTasks') : `Tasks for ${selectedDate}`}
+              {!serverAvailable && <span style={{ color: '#ff4d4f', fontSize: '12px' }}>({t('offline')})</span>}
+            </Title>
+          </div>
+          <TasksStats aria-label="Task statistics">
+            <StatItem aria-label={`${completedCount} completed tasks`}>
+              <CheckCircleOutlined style={{ color: '#52c41a' }} aria-hidden="true" />
+              <Text>{completedCount}</Text>
+            </StatItem>
+            <StatItem aria-label={`${pendingCount} pending tasks`}>
+              <ClockCircleOutlined style={{ color: '#faad14' }} aria-hidden="true" />
+              <Text>{pendingCount}</Text>
+            </StatItem>
+          </TasksStats>
+        </SectionHeader>
 
-      <TaskInput onAddTask={addTask} placeholder={t('taskPlaceholder')} />
+        <SectionContent>
+          <TaskInput onAddTask={addTask} placeholder={t('taskPlaceholder')} />
 
-      {totalTasks === 0 ? (
-        <EmptyContainer role="status" aria-live="polite">
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <span style={{ color: '#666' }}> {/* Improved contrast */}
-                {t('noTasksYet')}
-              </span>
-            }
-          />
-        </EmptyContainer>
-      ) : (
-        <TasksList 
-          role="list" 
-          aria-label={`${totalTasks} tasks, ${pendingCount} pending, ${completedCount} completed`}
-          tabIndex={0}
-        >
-          <AnimatePresence>
-            {/* Show pending tasks first */}
-            {pendingTasks.map(task => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggle={toggleTask}
-                onDelete={deleteTask}
+          {totalTasks === 0 ? (
+            <EmptyContainer role="status" aria-live="polite">
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <span style={{ color: '#666' }}>
+                    {t('noTasksYet')}
+                  </span>
+                }
               />
-            ))}
-            
-            {/* Divider between pending and completed */}
-            {pendingTasks.length > 0 && completedTasks.length > 0 && (
-              <Divider 
-                style={{ margin: '16px 0', fontSize: '12px', color: '#666' }} /* Improved contrast */
-              >
-                {t('completedTasks')} ({completedTasks.length})
-              </Divider>
-            )}
-            
-            {/* Show completed tasks at bottom */}
-            {completedTasks.map(task => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggle={toggleTask}
-                onDelete={deleteTask}
-              />
-            ))}
-          </AnimatePresence>
-        </TasksList>
+            </EmptyContainer>
+          ) : (
+            <TasksList 
+              role="list" 
+              aria-label={`${totalTasks} tasks, ${pendingCount} pending, ${completedCount} completed`}
+              tabIndex={0}
+            >
+              <AnimatePresence>
+                {/* Show pending tasks first */}
+                {pendingTasks.map(task => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onToggle={toggleTask}
+                    onDelete={deleteTask}
+                  />
+                ))}
+                
+                {/* Divider between pending and completed */}
+                {pendingTasks.length > 0 && completedTasks.length > 0 && (
+                  <Divider 
+                    style={{ margin: '16px 0', fontSize: '12px', color: '#666' }}
+                  >
+                    {t('completedTasks')} ({completedTasks.length})
+                  </Divider>
+                )}
+                
+                {/* Show completed tasks at bottom */}
+                {completedTasks.map(task => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onToggle={toggleTask}
+                    onDelete={deleteTask}
+                  />
+                ))}
+              </AnimatePresence>
+            </TasksList>
+          )}
+        </SectionContent>
+      </TasksSection>
+
+      {/* Incomplete Tasks Section - only show when viewing today */}
+      {viewingToday && (
+        <IncompleteTasksSection onTaskUpdate={handleTaskUpdate} />
       )}
+
+      {/* Calendar Section */}
+      <Collapse 
+        activeKey={isCalendarCollapsed ? [] : ['calendar']}
+        onChange={() => setIsCalendarCollapsed(!isCalendarCollapsed)}
+        size="small"
+        style={{ marginTop: '16px' }}
+      >
+        <Collapse.Panel 
+          key="calendar"
+          header={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CalendarOutlined style={{ color: '#1890ff' }} />
+              <Text strong style={{ color: '#1890ff' }}>{t('calendar')}</Text>
+            </div>
+          }
+          showArrow={true}
+        >
+          <Calendar 
+            onDateSelect={handleDateSelect}
+            onTaskCreated={handleTaskUpdate}
+            selectedDate={selectedDate}
+          />
+        </Collapse.Panel>
+      </Collapse>
     </TasksContainer>
   )
 }
